@@ -1,4 +1,5 @@
 jupyterlab
+jupyter
 numpy
 scipy
 pyopengl

@@ -8,8 +8,10 @@ BIN     = $(ENV_DIR)/bin
 DEP     = ../dependencies.txt
 PYTHON  = python3.9
 
+install:
+	ipython kernel install --name "mav-venv" --user
 
-install:            ## Install the project
+setup:            ## Install the project
 	python3.9 -m venv mav_venv
 	$(BIN)/pip install --upgrade pip
 	$(BIN)/pip install -f requirements.txt -e .
