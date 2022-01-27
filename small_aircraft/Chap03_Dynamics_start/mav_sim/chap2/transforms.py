@@ -52,10 +52,9 @@ def rot_x(angle: float) -> RotMat:
     s = np.sin(angle)
 
     # Calculate rotaiton matrix
-    rot = np.array([[1 , 0  , 0]   ,
-                  [0 , c  , s]   ,
-                  [0 , -s , c]])
-
+    rot = np.array([    [1.,  0.,  0.],
+                        [0.,  c,   s],
+                        [0., -s,   c] ])
     return cast(RotMat, rot)
 
 def rot_y(angle: float) -> RotMat:
@@ -72,10 +71,9 @@ def rot_y(angle: float) -> RotMat:
     s = np.sin(angle)
 
     # Calculate rotaiton matrix
-    rot = np.array([[c , 0 , -s] ,
-                  [0 , 1 , 0]  ,
-                  [s , 0 , c]])
-
+    rot = np.array([    [c,   0., -s],
+                        [0.,  1.,  0.],
+                        [s,   0.,  c] ])
     return cast(RotMat, rot)
 
 def rot_z(angle: float) -> RotMat:
@@ -92,10 +90,9 @@ def rot_z(angle: float) -> RotMat:
     s = np.sin(angle)
 
     # Calculate rotaiton matrix
-    rot = np.array([[c  , s , 0] ,
-                  [-s , c , 0] ,
-                  [0  , 0 , 1]])
-
+    rot = np.array([    [c,   s,  0.],
+                        [-s,  c,  0.],
+                        [0., 0.,  1.] ])
     return cast(RotMat, rot)
 
 # Rotation matrices between concentric frames
@@ -110,7 +107,6 @@ def rot_v_to_v1(psi: float) -> RotMat:
         rot: Rotation matrix from frame v to v1
     """
     rot = rot_z(psi)
-
     return rot
 
 def rot_v1_to_v2(theta: float) -> RotMat:
@@ -124,7 +120,6 @@ def rot_v1_to_v2(theta: float) -> RotMat:
         rot: Rotation matrix from frame v1 to v2
     """
     rot = rot_y(theta)
-
     return rot
 
 def rot_v2_to_b(phi: float) -> RotMat:
@@ -138,7 +133,6 @@ def rot_v2_to_b(phi: float) -> RotMat:
         rot: Rotation matrix from frame v2 to b
     """
     rot = rot_x(phi)
-
     return rot
 
 def rot_b_to_s(alpha: float) -> RotMat:
@@ -151,8 +145,7 @@ def rot_b_to_s(alpha: float) -> RotMat:
     Returns:
         rot: Rotation matrix from body frame to stability frame
     """
-    rot = np.transpose(rot_y(alpha))
-
+    rot = rot_y(-alpha)
     return rot
 
 def rot_s_to_w(beta: float) -> RotMat:
@@ -166,7 +159,6 @@ def rot_s_to_w(beta: float) -> RotMat:
         rot: Rotation matrix from body frame to stability frame
     """
     rot = rot_z(beta)
-
     return rot
 
 def rot_v_to_b(psi: float, theta: float, phi: float) -> RotMat:
@@ -181,9 +173,18 @@ def rot_v_to_b(psi: float, theta: float, phi: float) -> RotMat:
     Returns:
         rot: Rotation matrix from vehicle frame to body frame
     """
+    # Calculate the trig functions
+    cpsi = np.cos(psi)
+    spsi = np.sin(psi)
+    cth = np.cos(theta)
+    sth = np.sin(theta)
+    cphi = np.cos(phi)
+    sphi = np.sin(phi)
 
-    rot = rot_v2_to_b(phi)@rot_v1_to_v2(theta)@rot_v_to_v1(psi)
-
+    # Calculate the rotation matrix
+    rot = np.array([    [cth*cpsi,                  cth*spsi,                   -sth],
+                        [sphi*sth*cpsi-cphi*spsi,   sphi*sth*spsi+cphi*cpsi,    sphi*cth],
+                        [cpsi*sth*cphi+sphi*spsi,   cphi*sth*spsi-sphi*cpsi,    cphi*cth]])
     return cast(RotMat, rot)
 
 def rot_b_to_v(psi: float, theta: float, phi: float) -> RotMat:
@@ -198,8 +199,11 @@ def rot_b_to_v(psi: float, theta: float, phi: float) -> RotMat:
     Returns:
         rot: Rotation matrix from body frame to vehicle frame
     """
-    rot = np.transpose(rot_v_to_b(psi, theta, phi))
+    # Calculate the rotation from v to b
+    R_v_to_b = rot_v_to_b(psi, theta, phi)
 
+    # rot_b_to_v is the inverse / transpose of the previous matrix
+    rot = R_v_to_b.T
     return rot
 
 # Calculating the transforms of points
@@ -213,8 +217,10 @@ def trans_i_to_v(pose: Pose, p_i: Points) -> Points:
     Returns:
         p_v: Point represented in the vehicle frame
     """
-    p_v = p_i - np.array([[pose.north],[pose.east],[pose.altitude]])
-    return p_v
+    p_v = np.array([[p_i[0,0] - pose.north ],
+                    [p_i[1,0] - pose.east  ],
+                    [p_i[2,0] + pose.altitude]]) # Note "+" is due to altitude = -down
+    return cast(Points, p_v)
 
 def trans_v_to_i(pose: Pose, p_v: Points) -> Points:
     """
@@ -226,8 +232,10 @@ def trans_v_to_i(pose: Pose, p_v: Points) -> Points:
     Returns:
         p_i: Point represented in the inertial frame
     """
-    p_i = p_v + np.array([[pose.north],[pose.east],[pose.altitude]])
-    return p_i
+    p_i = np.array([[p_v[0,0] + pose.north ],
+                    [p_v[1,0] + pose.east  ],
+                    [p_v[2,0] - pose.altitude]]) # Note "-" is due to altitude = -down
+    return cast(Points, p_i)
 
 def trans_i_to_b(pose: Pose, p_i: Points) -> Points:
     """
@@ -240,8 +248,15 @@ def trans_i_to_b(pose: Pose, p_i: Points) -> Points:
         p_b: Point represented in the body frame
     """
 
-    p_b = rot_v_to_b(pose.psi, pose.theta, pose.phi)@trans_i_to_v(pose, p_i)
-    return p_b
+    # Transform the point to the vehicle frame
+    p_v = trans_i_to_v(pose, p_i)
+
+    # Calculate the transform from the vehicle frame to the body frame
+    R_v_to_b = rot_v_to_b(pose.psi, pose.theta, pose.phi)
+
+    # Transform the point from the vehicle frame to the body frame
+    p_b = R_v_to_b @ p_v
+    return cast(Points, p_b)
 
 def trans_b_to_i(pose: Pose, p_b: Points) -> Points:
     """
@@ -253,5 +268,12 @@ def trans_b_to_i(pose: Pose, p_b: Points) -> Points:
     Returns:
         p_i: Point represented in the inertial frame
     """
-    p_i = rot_b_to_v(pose.psi, pose.theta, pose.phi)@p_b + np.array([[pose.north],[pose.east],[pose.altitude]])
-    return p_i
+
+    # Calculate the transform from the body frame to the vehicle frame
+    R_b_to_v = rot_b_to_v(pose.psi, pose.theta, pose.phi)
+
+    # Transform the point to the vehicle frame
+    p_v = R_b_to_v @ p_b
+
+    # Transform the point from the vehicle frame to the inertial frame
+    return trans_v_to_i(pose, cast(Points, p_v) )
