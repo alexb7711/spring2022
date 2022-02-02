@@ -24,4 +24,7 @@ clean:              ## Remove the project and its dependencies from your python3
 	$(BIN)/pip cache purge
 
 run:
-	$(BIN)/python3.9 ./book_assignments/mavsim_chap3.py
+	$(BIN)/python3.9 ./book_assignments/mavsim_chap4.py
+
+test:
+	$(BIN)/python3.9 ./mav_sim/unit_tests/ch4_dynamics_test.py
