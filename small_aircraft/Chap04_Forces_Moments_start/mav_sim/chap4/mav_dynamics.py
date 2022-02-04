@@ -186,21 +186,20 @@ def forces_moments(state: types.DynamicState, delta: MsgDelta, Va: float, beta: 
 
     ##---------------------------------------------------------------------------
     # Compute l,m,n
-    l = pm*MAV.b*(MAV.C_L_0 + MAV.C_ell_beta*beta + MAV.C_ell_p*MAV.b*x.p/(2*Va) + \
+    l = pm*MAV.b*(MAV.C_ell_0 + MAV.C_ell_beta*beta + MAV.C_ell_p*MAV.b*x.p/(2*Va) + \
                   MAV.C_ell_r*MAV.b*x.r/(2*Va) + MAV.C_ell_delta_a*delta.aileron + \
                   MAV.C_ell_delta_r*delta.rudder)
+
     n = pm*MAV.b*(MAV.C_n_0 + MAV.C_n_beta*beta + MAV.C_n_p*MAV.b*x.p/(2*Va) + \
                   MAV.C_n_r*MAV.b*x.r/(2*Va) + MAV.C_n_delta_a*delta.aileron + \
                   MAV.C_n_delta_r*delta.rudder)
 
     ##---------------------------------------------------------------------------
     # Combine
-    M  = np.array([l,m,n]) + np.array([Qp,0,0])
+    M  = np.array([l,m,n]) - np.array([Qp,0,0])
     Mx = M[0]
     My = M[1]
     Mz = M[2]
-
-    Mx = My = Mz = 0
 
     return types.ForceMoment( np.array([[fx, fy, fz, Mx, My, Mz]]).T )
 
@@ -253,7 +252,7 @@ def aerodynamic_forces(x, Va, delta, alpha, beta):
 
     ##---------------------------------------------------------------------------
     # Calculate longintudinal forces
-    fx,fz = sc@np.array([-f_lift, -f_drag])
+    fx,fz = sc@np.array([-f_drag, -f_lift])
 
     ##---------------------------------------------------------------------------
     # Calculate lateral forces
@@ -276,10 +275,12 @@ def sigma(alpha):
     a0 = MAV.alpha0
     M  = MAV.M
 
+    e  = lambda x: np.exp(x)
+
     ##---------------------------------------------------------------------------
     # Calculate blending function
-    s = (1 + np.exp(-M*(a-a0)) + np.exp(M*(a+a0)))/ \
-       ((1+np.exp(-M*(a-a0)))*(1+np.exp(M*(a+a0))))
+    s = (1 + e(-M*(a-a0)) + e(M*(a+a0)))/ \
+       ((1+e(-M*(a-a0)))*(1+e(M*(a+a0))))
 
     return s
 
@@ -318,6 +319,7 @@ def motor_thrust_torque(Va: float, delta_t: float) -> tuple[float, float]:
     torque_prop = r*pow(n,2)*pow(D,5)*CQ
 
     return thrust_prop, torque_prop
+
 ##===============================================================================
 #
 def prop_speed(Va, dt):
@@ -337,8 +339,8 @@ def prop_speed(Va, dt):
     ##---------------------------------------------------------------------------
     # Calculate a, b, and c
     a = (r*pow(D,5))/(pow(2*p,2))*MAV.C_Q0
-    b = (r*pow(D,4))/(2*p)*MAV.C_Q1*Va + kq*kv/R
-    c = p*pow(D,3)*MAV.C_Q2*pow(Va,2) - kq/r * Vin + kq*i
+    b = ((MAV.rho*MAV.D_prop**4*MAV.C_Q1*Va)/(2*np.pi)) + ((MAV.KQ**2)/(MAV.R_motor))
+    c = r*pow(D,3)*MAV.C_Q2*pow(Va,2) - kq/R*Vin + kq*i
 
     ##---------------------------------------------------------------------------
     # Calculate propeller speed [rad/sec]
@@ -382,19 +384,18 @@ def update_velocity_data(state: types.DynamicState, \
 
     ##---------------------------------------------------------------------------
     # compute airspeed
-    Vab = np.transpose(np.array([[x.u], [x.v], [x.w]]) - wind_body_frame)[0]
-    Va  = np.sqrt(np.power(Vab[0],2) + np.power(Vab[0],2) + np.power(Vab[0],2)).T
+    s      = np.array([[x.u], [x.v], [x.w]])
+    ur     = x.u - wind_body_frame.item(0)
+    vr     = x.v - wind_body_frame.item(1)
+    wr     = x.w - wind_body_frame.item(2)
+    Va     = np.sqrt(np.power(ur,2) + np.power(vr,2) + np.power(wr,2))
 
     ##---------------------------------------------------------------------------
     # compute angle of attack
-    ur = Vab[0]
-    vr = Vab[1]
-    wr = Vab[2]
-
-    alpha = np.arctan(wr/ur)
+    alpha = np.arctan2(wr,ur)
 
     ##---------------------------------------------------------------------------
     # compute sideslip angle
-    beta = np.arcsin(vr/(np.sqrt(np.power(ur,2)) + np.sqrt(np.power(vr,2)) + np.sqrt(np.power(wr,2))))
+    beta = np.arctan2(vr,np.sqrt(np.power(ur,2) + np.power(wr,2)))
 
     return (Va, alpha, beta, wind_inertial_frame)

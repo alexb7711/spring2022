@@ -28,6 +28,8 @@ class WindSimulation:
         if gust_params is None:
             gust_params = MsgGustParams()
 
+
+
         #   Dryden gust model parameters (pg 56 UAV book)
         Va = 25 # must set Va to a constant value
         #
@@ -43,13 +45,18 @@ class WindSimulation:
             sigma_v = 0.0
             sigma_w = 0.0
 
-        print("WindSimulation::__init__() Need to implement")
-        self.u_w = TransferFunction(num=np.array([[0]]),
-                                     den=np.array([[1,1]]),
+        a1 = sigma_u*np.sqrt(2.*Va/Lu)
+        b1 = Va/Lu
+        self.u_w = TransferFunction(num=np.array([[a1]]),
+                                    den=np.array([[1, b1]]),
+                                    Ts=Ts)
+        a2 = sigma_v*np.sqrt(3.*Va/Lv)
+        b2 = Va/Lv
+        self.v_w = TransferFunction(num=np.array([[a2]]),
+                                     den=np.array([[1,b2]]),
                                      Ts=Ts)
-        self.v_w = TransferFunction(num=np.array([[0]]),
-                                     den=np.array([[1,1]]),
-                                     Ts=Ts)
+        a3 = sigma_w*np.sqrt(3.*Va/Lw)
+        b3 = Va/Lw
         self.w_w = TransferFunction(num=np.array([[0]]),
                                      den=np.array([[1,1]]),
                                      Ts=Ts)

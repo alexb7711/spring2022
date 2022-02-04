@@ -19,7 +19,7 @@ def motor_thrust_torque_test() -> None:
     inputs = [
         {
             "Va": 1,
-            "delta_t": 0,
+            "delta_t": 0,
         },
         {
             "Va": 27.39323489287441,
