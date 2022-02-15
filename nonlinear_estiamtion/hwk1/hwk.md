@@ -114,10 +114,23 @@ For each of the functions find whether
 As referenced in the [class notes](https://profmattharris.files.wordpress.com/2022/01/nac_v01.pdf), $x^2$ is locally, but not globally, Lipschitz. $|x|$ on the other hand, it not continuous at 0. Furthermore:
 
 $$
-\forall x,y \in \mathbb{R} \; \left| |x| - |y|  \right| \leq \left| x-y \right|
+\forall x,y \in \mathbb{R} \; \left| |x| - |y|  \right| \leq \left| x-y \right| \\
 $$
 
-Therefore, the following can be said about the function
+By choosing $\delta = \frac{\epsilon}{3}$:
+
+$$
+\begin{array}{l}
+	\left| x^2 + |x| - y^2 - |y| \right| \leq L \left|x-y\right| \\
+	\left|x^2 - y^2 \right| + \left| |x| - |y| \right|           \\
+	2\left|x - y \right| + \left| x - y \right|                  \\
+	3\left| x - y \right|                                        \\
+	\text{Note that } \left| x - y \right| = \delta              \\
+	3\delta = \frac{3\epsilon}{3} = \epsilon                     \\
+\end{array}
+$$
+
+This shows that there $f(x)$ is locally Lipschitz. Therefore, the following can be said about the function
 
 * Not continuously differentiable
 * Locally Lipschitz
@@ -143,11 +156,17 @@ $$
 \frac{\partial f}{\partial x} = cos(x)sgn(x)
 $$
 
+Furthermore, consider Figures \ref{fg:sgnsin} and \ref{fg:sgncos}. It can be seen that for $f(x)$, it is piecewise continuous, but not continuously differentiable.
+
+![Plot of $sin(x)sgn(x)$\label{fg:sgnsin}](./3.1.3b.pdf){width=70%}
+
+![Plot of $cos(x)sgn(x)$\label{fg:sgncos}](./3.1.3a.pdf){width=70%}
+
 Given the function and its derivative we can conclude:
 
 * Not continuously differentiable
 * Locally Lipschitz
-* Continuous
+* Piecewise continuous
 * Globally Lipschitz
 
 ## 4.
@@ -159,7 +178,17 @@ $sin(x)$ and $x$ continuous, continuously differentiable, and globally Lipschitz
 * Globally Lipschitz
 
 ## 5.
-$-x$ is continuous, continuously differentiable, and globally Lipschitz. However, we have seen the $|x|$ is not continuous or continuously differentiable. Therefore:
+$-x$ is continuous, continuously differentiable, and globally Lipschitz. However, we have seen the $|x|$ is not continuous or continuously differentiable, but it is locally and globally Lipschitz. Therefore:
+
+$$
+\begin{array}{l}
+	\left| -x + 2|x| + y - 2|y| \right|       \\
+	\left|x-y\right| + \left| 2x - 2y \right| \\
+	3\left|x-y\right|
+\end{array}
+$$
+
+Implying L = 3. Note that this holds for $\mathbb{R}$.
 
 * Not continuously differentiable
 * Locally Lipschitz
@@ -253,11 +282,11 @@ Uniqueness can be shown by showing $f(x)$ is globally Lipschitz (Theorems Lemmas
 $$
 \begin{array}{l}
 	f(x) = \frac{y}{1+y^2} \\
-	\frac{\partial f}{\partial y} = -\frac{y^2 - 1}{y^4 + 2x^2 + 1}
+	\frac{\partial f}{\partial y} = -\frac{y^2 - 1}{y^4 + 2y^2 + 1}
 \end{array}
 $$
 
-which shows that $f(x)$ is continuous and continuously differentiable. Furthermore taking the limit to $\infty$, $f(x) \rightarrow 0$ making $f(x)$ bounded. Therefore, by definition 
+which shows that $f(x)$ is continuous and continuously differentiable. Therefore, [by definition, section][Locally Lipschitz], the function can be identified as locally Lipschitz. Furthermore taking the limit to $\infty$, $\frac{\partial f}{\partial x} \rightarrow 0$ showing that $\frac{\partial f(x)}{\partial x}$ uniformly bounded. Therefore, [by definition, section][Globally Lipschitz], $f(x)$ can be said to be globally Lipschitz.
 
 # 3.20
 ## Given
@@ -273,10 +302,10 @@ $$
 Therefore, if $W \subset \mathbb{R}^n$ (assuming the set is compact)
 
 $$
-\forall x,y \in W\; ||f(t,x) - f(t,y)|| \leq L ||x-y||
+\forall x,y \in W\; ||f(t,x) - f(t,y)|| \leq \forall x,y \in \mathbb{R}^n\; ||f(t,x) - f(t,y)|| \leq L ||x-y||
 $$
 
-must be true.
+must be true because every subset of $\mathbb{R}^n$ must also satisfy the Lipschitz conditions.
 
 # Canvas Problem
 ## Given
