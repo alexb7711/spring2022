@@ -106,11 +106,11 @@ def trim_objective_fun(x: npt.NDArray[Any], Va: float, gamma: float) -> float:
     # Calculate the desired trim trajectory dynamics
     desired_trim_state_dot = np.array([h_dot(Va,gamma), 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    ## Calculate Euler angles
+    # Calculate the actual state dynamics
+    ## Va, alpha, and beta for the provided state
     Va_s,alpha,beta,wind_inertial_frame = update_velocity_data(state)
 
     ## Calculate forces and moments
-
     fm = forces_moments(state, delta, Va_s, beta, alpha)
 
     # Calculate the dynamics based upon the current state and input
@@ -119,6 +119,7 @@ def trim_objective_fun(x: npt.NDArray[Any], Va: float, gamma: float) -> float:
     # Calculate Euler angles
     phi, theta, psi = Quaternion2Euler(x_dot[IND.QUAT])
 
+    ## Actual forces and dynamics
     f = [-x_dot.item(IND.DOWN) ,
          x_dot.item(IND.U)     ,
          x_dot.item(IND.V)     ,
@@ -132,12 +133,7 @@ def trim_objective_fun(x: npt.NDArray[Any], Va: float, gamma: float) -> float:
 
     # Calculate the difference between the desired and actual
     diff = f - desired_trim_state_dot
-    #  print(f)
-    #  print(desired_trim_state_dot)
-    #  print(diff)
 
     # Calculate the square of the difference (neglecting pn and pe)
     J = np.linalg.norm(diff, 2)
-    #  print(J)
-    #  input()
     return float( J )
