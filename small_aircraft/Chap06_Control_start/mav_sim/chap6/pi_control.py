@@ -63,6 +63,8 @@ class PIControl:
         ## Calculate saturated input
         u_sat = saturate(u, -self.limit, self.limit)
 
+        self.integrator = self.integrator + (self.Ts/2)*(error+self.error_delay_1)
+
         ##-----------------------------------------------------------------------
         # Integral anti-windup
 

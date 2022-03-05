@@ -50,4 +50,4 @@ class PDControlWithRate:
         ##-----------------------------------------------------------------------
         # If the control output is greater than the saturated limit, return
         # self.limit
-        return min(self.kp*(y_ref - y) - self.kd*ydot, self.limit)
+        return saturate(self.kp*(y_ref - y) - self.kd*ydot, -self.limit, self.limit)

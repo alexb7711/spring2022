@@ -55,7 +55,7 @@ class TFControl:
         # coefficients for difference equation
         self.b0 =  k * (2.0 * n1 + Ts * n0) / (2.0 * d1 + Ts * d0)
         self.b1 = -k * (2.0 * n1 - Ts * n0) / (2.0 * d1 + Ts * d0)
-        self.a1 = -k * (2.0 * d1 - Ts * d0) / (2.0 * d1 + Ts * d0)
+        self.a1 = -(2.0 * d1 - Ts * d0) / (2.0 * d1 + Ts * d0)
 
         return
 

@@ -29,15 +29,15 @@ yaw_damper_kr: float   = 0.2
 #----------pitch loop------------- Section 6.1.2.1
 wn_pitch: float   = 15.0
 zeta_pitch: float = 0.707
-wn_theta_squared  = wn_pitch**2
 pitch_kp: float   = (wn_pitch**2 - TF.a_theta2)/TF.a_theta3
-pitch_kd: float   = (2*zeta_pitch - TF.a_theta1)/TF.a_theta3
+wn_theta_squared  = TF.a_theta2 + pitch_kp*TF.a_theta3
+pitch_kd: float   = (2*zeta_pitch*wn_pitch - TF.a_theta1)/TF.a_theta3
 K_theta_DC: float = (pitch_kp*TF.a_theta3)/(TF.a_theta2 + pitch_kp*TF.a_theta3)
 
 #----------altitude loop------------- Section 6.1.2.2
 wn_altitude: float   = wn_pitch / 30.0
 zeta_altitude: float = 1.0
-altitude_ki: float   = wn_pitch**2/(K_theta_DC*Vg)
+altitude_ki: float   = wn_altitude**2/(K_theta_DC*Vg)
 altitude_kp: float   = (2*zeta_altitude*wn_altitude)/(K_theta_DC*Vg)
 altitude_zone: float = 10.0  # moving saturation limit around current altitude
 

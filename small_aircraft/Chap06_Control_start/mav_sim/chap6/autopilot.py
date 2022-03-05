@@ -60,8 +60,8 @@ class Autopilot:
                                                 Ts=ts_control,
                                                 limit=np.radians(30))
 
-        self.airspeed_from_throttle = PIControl(kp=AP.airspeed_throttle_ki,
-                                                ki=AP.airspeed_throttle_kp,
+        self.airspeed_from_throttle = PIControl(kp=AP.airspeed_throttle_kp,
+                                                ki=AP.airspeed_throttle_ki,
                                                 Ts=ts_control,
                                                 limit=1)
 
@@ -87,32 +87,32 @@ class Autopilot:
         ##-----------------------------------------------------------------------
         # lateral autopilot
 
+        ## Fix chi: bounded between (-pi, pi)
+        chi_ = wrap(cmd.course_command, state.chi)
+
+        ## Fix altitude: Don't let the altitude command more than
+        ## +- altitude_zone
+        alt_ = saturate(cmd.altitude_command, state.altitude-AP.altitude_zone,
+                                              state.altitude+AP.altitude_zone)
         ## Calculate control commands
         ### Roll control command
         phi_c   = cmd.phi_feedforward + \
-                  self.course_from_roll.update(cmd.course_command, state.chi)
+                  self.course_from_roll.update(chi_, state.chi)
+        phi_c   = saturate(phi_c, -np.radians(30), np.radians(30))
 
         ### Pitch control command
-        theta_c = self.altitude_from_pitch.update(cmd.altitude_command, state.altitude)
-
-        ## Saturate control commands
-        phi_c                = saturate(phi_c, np.radians(-30), np.radians(30))
-        #  cmd.altitude_command = \
-                #  saturate(cmd.altitude_command, -AP.altitude_zone, AP.altitude_zone)
+        theta_c = self.altitude_from_pitch.update(alt_, state.altitude)
 
         ## Calculate unsaturated control
         delta_a = self.roll_from_aileron.update(phi_c, state.phi, state.p)
         delta_r = self.yaw_damper.update(state.r)
 
-        ## Saturate output
-        delta_a = saturate(delta_a, np.radians(-30), np.radians(30))
-
         ##-----------------------------------------------------------------------
         # longitudinal autopilot
 
         ## Calculate unsaturated control
-        delta_e = self.pitch_from_elevator.update(cmd.altitude_command,
-                                                  state.altitude,
+        delta_e = self.pitch_from_elevator.update(theta_c,
+                                                  state.theta,
                                                   state.q)
 
         delta_t = self.airspeed_from_throttle.update(cmd.airspeed_command,

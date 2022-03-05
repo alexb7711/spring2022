@@ -105,7 +105,7 @@ def tf_control_test() -> None:
     # Expected outputs
     outputs = [
         float(0),
-        float(0.15892403727930438),
+        float(0.794620186396522),
     ]
 
     for input_it, output_it in zip(inputs, outputs):
