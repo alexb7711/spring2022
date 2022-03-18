@@ -252,19 +252,20 @@ def calculate_sensor_readings(state: types.DynamicState, forces: types.NP_MAT, \
     sensors = MsgSensors()
 
     # Calculate Euler angles
-    phi, theta, psi = Quaternion2Euler(state[QUAT])
+    phi, theta, psi = Quaternion2Euler(state[IND.QUAT])
 
     # Populate all other sensors
-    sensor.accel_x, sensor.accel_y, sensor.accel_z = accelerometer(phi, theta, forces, noise_scale)
-    sensor.gyro_x, sensor.gyro_y, sensor.gyro_z    = gyro(state[P], state[Q], state[R], noise_scale)
-    sensor.abs_pressure, sensor.diff_press         = pressure(state[DOWN], Va, noise_scale)
-    sensor.mag_x, sensor.mag_y, sensor.mag_z       = magnometer(state[QUAT], noise_scale)
-    sensor.gps_x, sensor.gps_y, sensor.gps_z       = gps(state[0:3], state[VEL], state[QUAT], nu, noise_scale)
+    sensors.accel_x, sensors.accel_y, sensors.accel_z = accelerometer(phi, theta, forces, noise_scale)
+    sensors.gyro_x, sensors.gyro_y, sensors.gyro_z    = gyro(state.item(IND.P), state.item(IND.Q), state.item(IND.R), noise_scale)
+    sensors.abs_pressure, sensors.diff_press         = pressure(state.item(IND.DOWN), Va, noise_scale)
+    sensors.mag_x, sensors.mag_y, sensors.mag_z       = magnetometer(state[IND.QUAT], noise_scale)
+    sensors.gps_n, sensors.gps_e, sensors.gps_h, gps_Vg, gps_course \
+                                                   = gps(state[0:3], state[IND.VEL], state[IND.QUAT], nu, noise_scale)
 
     # simulate GPS sensor
     if update_gps:
         # Update the gps transient bias
-        gps_error_trans_update(nu, noise_scale)
+        nu_update = gps_error_trans_update(nu, noise_scale)
 
     else:
         # Output previous values
