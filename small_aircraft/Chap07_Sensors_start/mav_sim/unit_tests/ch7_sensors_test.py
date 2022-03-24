@@ -4,7 +4,6 @@
 import itertools
 import os
 import pickle
-import sys
 from typing import Any, Dict, List
 
 import numpy as np
@@ -63,7 +62,7 @@ def accelerometer_test(test_cases: List[Dict[str, Any]]) -> None:
             print("Expected output:")
             print(test_case_it["output"])
             print("Difference:")
-            print(calculated_output - test_case_it["output"])
+            print(np.array(calculated_output) - np.array(test_case_it["output"]))
             break
     print("End of test\n")
 
@@ -117,7 +116,7 @@ def gyro_test(test_cases: List[Dict[str, Any]]) -> None:
             print("Expected output:")
             print(test_case_it["output"])
             print("Difference:")
-            print(calculated_output - test_case_it["output"])
+            print(np.array(calculated_output) - np.array(test_case_it["output"]))
             break
     print("End of test\n")
 
@@ -168,7 +167,7 @@ def pressure_test(test_cases: List[Dict[str, Any]]) -> None:
             print("Expected output:")
             print(test_case_it["output"])
             print("Difference:")
-            print(calculated_output - test_case_it["output"])
+            print(np.array(calculated_output) - np.array(test_case_it["output"]))
             break
     print("End of test\n")
 
@@ -220,7 +219,7 @@ def magnometer_test(test_cases: List[Dict[str, Any]]) -> None:
             print("Expected output:")
             print(test_case_it["output"])
             print("Difference:")
-            print(calculated_output - test_case_it["output"])
+            print(np.array(calculated_output) - np.array(test_case_it["output"]))
             break
     print("End of test\n")
 
@@ -272,11 +271,11 @@ def gps_error_trans_update_test(test_cases: List[Dict[str, Any]]) -> None:
         ).any():
             print("Failed test!")
             print("Calculated output:")
-            print(calculated_output)
+            calculated_output.print()
             print("Expected output:")
-            print(test_case_it["output"])
+            test_case_it["output"].print()
             print("Difference:")
-            print(calculated_output - test_case_it["output"])
+            print(calculated_output.to_array() - test_case_it["output"].to_array())
             break
     print("End of test\n")
 
@@ -344,7 +343,7 @@ def gps_test(test_cases: List[Dict[str, Any]]) -> None:
             print("Expected output:")
             print(test_case_it["output"])
             print("Difference:")
-            print(calculated_output - test_case_it["output"])
+            print(np.array(calculated_output) - np.array(test_case_it["output"]))
             break
     print("End of test\n")
 
@@ -628,14 +627,24 @@ def gen_test_archive() -> None:
     archive["gps"] = gen_gps_vars()
     archive["calculate_sensor_readings"] = gen_calculate_sensor_readings_vars()
     # Save to archive
-    with open(os.path.join(sys.path[0], "ch7_test_archive.pkl"), "wb") as file:
+    with open(
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "ch7_test_archive.pkl"
+        ),
+        "wb",
+    ) as file:
         pickle.dump(archive, file)
 
 
 def run_all_tests() -> None:
     """Run all tests."""
     # Open archive
-    with open(os.path.join(sys.path[0], "ch7_test_archive.pkl"), "rb") as file:
+    with open(
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "ch7_test_archive.pkl"
+        ),
+        "rb",
+    ) as file:
         tests_archive = pickle.load(file)
     # Run tests
     accelerometer_test(tests_archive["accelerometer"])
@@ -648,5 +657,5 @@ def run_all_tests() -> None:
 
 
 if __name__ == "__main__":
-    #gen_test_archive()
+    # gen_test_archive()
     run_all_tests()
