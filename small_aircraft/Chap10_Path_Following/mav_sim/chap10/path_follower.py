@@ -63,7 +63,7 @@ def follow_straight_line(path: MsgPath, state: MsgState, k_path: float, chi_inf:
     autopilot_commands.altitude_command = calc_alt_cmd(path, state, k_path, chi_inf)
 
     # Update velocity command
-    autopilot_commands.airspeed_command = state.Va
+    autopilot_commands.airspeed_command = path.airspeed
 
     return autopilot_commands
 
@@ -72,15 +72,15 @@ def follow_straight_line(path: MsgPath, state: MsgState, k_path: float, chi_inf:
 ##
 def calc_lat_cmd(path, state, k_path, chi_inf):
     # Variables
-    p  = np.array([state.north, state.east, state.altitude]).T # Position of MAV
-    q  = path.line_direction                                   # Direction of line
-    r  = path.line_origin                                      # Origin of path
+    p  = np.array([[state.north, state.east, state.altitude]]).T # Position of MAV
+    q  = path.line_direction                                     # Direction of line
+    r  = path.line_origin                                        # Origin of path
 
     # Calculate Xq and ep
     Xq, ep = calc_chiq_ep(q, state, p, r)
 
     # Calculate commanded course angle
-    Xc = Xq - chi_inf * 2/np.pi * np.arctan(k_path*ep.item(1))
+    Xc = Xq - chi_inf * (2/np.pi) * np.arctan(k_path*ep.item(1))
 
     return Xc
 
@@ -113,8 +113,8 @@ def calc_alt_cmd(path, state, k_path, chi_inf):
 ##
 def calc_chiq_ep(q, state, p, r):
     # Course angle as measured from north
-    Xq = np.arctan2(q.item(1),q.item(0))
-    Xq = wrap(Xq, state.chi)
+    X  = np.arctan2(q.item(1),q.item(0))
+    Xq = wrap(X, state.chi)
 
 
     # Transformation matrix from inertial frame to path frame
@@ -124,7 +124,6 @@ def calc_chiq_ep(q, state, p, r):
 
     # Path error
     ep = Rip@(p-r)
-
     return Xq, ep
 
 ##===============================================================================
@@ -150,19 +149,21 @@ def follow_orbit(path: MsgPath, state: MsgState, k_orbit: float, gravity: float)
     rho = path.orbit_radius
     c   = path.orbit_center
     l   = 1 if path.orbit_direction == "CW" else -1
+    pcn = p.item(0) - c.item(0)
+    pce = p.item(1) - c.item(1)
 
     # Calculate distance from center of circle to MAV
-    d = np.sqrt((p.item(0) - c.item(0))**2 + (p.item(1) - c.item(1))**2)
+    d = np.sqrt(np.power(pcn,2) + np.power(pce,2))
 
     # Calculate orbit angle
-    phi = np.arctan2(p.item(1) - c.item(1), p.item(0) - c.item(0))
-    phi = wrap(phi, state.chi)
+    phi_t = np.arctan2(pce, pcn)
+    phi   = wrap(phi_t, state.chi)
 
     # Calculate course command
-    Xc = phi + l*(np.pi/2 + np.arctan(k_orbit * (d-rho)/rho ))
+    Xc = phi + l*(np.pi/2 + np.arctan(k_orbit * (d-rho)/rho))
 
     if (d-rho)/rho < 10:
-        pff = l*np.arctan(state.Va**2/gravity*rho)
+        pff = l*np.arctan(state.Va**2/(gravity*rho))
         autopilot_commands.phi_feedforward = pff
     else:
         autopilot_commands.phi_feedforward = 0
@@ -171,7 +172,7 @@ def follow_orbit(path: MsgPath, state: MsgState, k_orbit: float, gravity: float)
     hc = -c.item(2)
 
     # Update command
-    autopilot_commands.airspeed_command = state.Va
+    autopilot_commands.airspeed_command = path.airspeed
     autopilot_commands.course_command   = Xc
     autopilot_commands.altitude_command = hc
 

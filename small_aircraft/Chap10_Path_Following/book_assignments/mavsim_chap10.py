@@ -23,15 +23,16 @@ def main() -> None:
 
     # path definition
     path = MsgPath()
-    path.type = 'line'
-    path.line_origin = np.array([[0.0, 0.0, -100.0]]).T
-    path.line_direction = np.array([[0.5, 1.0, 0.0]]).T
-    path.line_direction = path.line_direction / np.linalg.norm(path.line_direction)
+    #  path.type = 'line'
+    #  path.line_origin = np.array([[0.0, 0.0, -100.0]]).T
+    #  path.line_direction = np.array([[0.5, 1.0, 0.0]]).T
+    #  path.line_direction = path.line_direction / np.linalg.norm(path.line_direction)
 
-    # path.type = 'orbit'
-    # path.orbit_center = np.array([[0.0, 0.0, -100.0]]).T  # center of the orbit
-    # path.orbit_radius = 300.0  # radius of the orbit
-    # path.orbit_direction = 'CW'  # orbit direction: 'CW'==clockwise, 'CCW'==counter clockwise
+    path.type = 'orbit'
+    path.orbit_center = np.array([[400, 200, -100.0]]).T  # center of the orbit
+    path.orbit_radius = 200.0  # radius of the orbit
+    path.orbit_direction = 'CW'  # orbit direction: 'CW'==clockwise, 'CCW'==counter clockwise
+    path.airspeed=25
 
     def constant_path(_: float, __: MsgState) -> MsgPath:
         return path
