@@ -18,7 +18,8 @@ from mav_sim.message_types.msg_waypoints import MsgWaypoints
 def line_manager(state: MsgState, waypoints: MsgWaypoints, ptr_prv: WaypointIndices,
                  path_prv: MsgPath, hs_prv: HalfSpaceParams) \
                 -> tuple[MsgPath, HalfSpaceParams, WaypointIndices]:
-    """Update for the line manager. Only updates the path and next halfspace under two conditions:
+    """
+    Update for the line manager. Only updates the path and next halfspace under two conditions:
         1) The waypoints are new
         2) In a new halfspace
 
@@ -40,19 +41,25 @@ def line_manager(state: MsgState, waypoints: MsgWaypoints, ptr_prv: WaypointIndi
     pos  = np.array([[state.north, state.east, -state.altitude]]).T
     ptr  = ptr_prv
 
-    if inHalfSpace(pos, hs):
-        ptr.increment_pointers(1)
-
+    if waypoints.flag_waypoints_changed:
+        print("init")
+        waypoints.flag_waypoints_changed = False
+        ptr                              = WaypointIndices()
+    elif inHalfSpace(pos, hs):
         # Create manager here
         path, hs = construct_line(waypoints, ptr)
+
+        print("Next")
+        ptr.increment_pointers(waypoints.num_waypoints)
 
     # Output the updated path, halfspace, and index pointer
     return (path, hs, ptr)
 
 def construct_line(waypoints: MsgWaypoints, ptr: WaypointIndices) \
     -> tuple[MsgPath, HalfSpaceParams]:
-    """Creates a line and switching halfspace. The halfspace assumes that the aggregate
-       path will consist of a series of straight lines.
+    """
+    Creates a line and switching halfspace. The halfspace assumes that the aggregate
+    path will consist of a series of straight lines.
 
     The line is created from the previous and current waypoints with halfspace defined for
     switching once the current waypoint is reached.
@@ -80,13 +87,14 @@ def construct_line(waypoints: MsgWaypoints, ptr: WaypointIndices) \
     path.plot_updated   = False             # Update plot
     path.line_origin    = previous          # Origin of line
     path.line_direction = (w-wp)/n(w,wp)    # Direction of line
-    path.airspeed       = waypoints.airspeed[ptr.current]
+    					    # Airspeed
+    path.airspeed       = waypoints.airspeed[ptr.previous]
 
     # Construct the halfspace
-    hs        = HalfSpaceParams()
-    hs.point  = w
-    q         = (wn-w)/n(wn,w)
-    qp        = (w-wp)/n(w,wp)
-    hs.normal = (qp+q)/n(qp,-q)
+    hs        = HalfSpaceParams() # Half plane object
+    hs.point  = w                 # Half plane point
+    q         = (wn-w)/n(wn,w)    # q_i
+    qp        = (w-wp)/n(w,wp)    # q_{i-1}
+    hs.normal = (qp+q)/n(qp,-q)   # Normal vector
 
     return (path, hs)
