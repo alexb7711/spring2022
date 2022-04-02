@@ -42,14 +42,13 @@ def line_manager(state: MsgState, waypoints: MsgWaypoints, ptr_prv: WaypointIndi
     ptr  = ptr_prv
 
     if waypoints.flag_waypoints_changed:
-        print("init")
         waypoints.flag_waypoints_changed = False
         ptr                              = WaypointIndices()
     elif inHalfSpace(pos, hs):
         # Create manager here
         path, hs = construct_line(waypoints, ptr)
 
-        print("Next")
+        # Increment pointers
         ptr.increment_pointers(waypoints.num_waypoints)
 
     # Output the updated path, halfspace, and index pointer
@@ -85,9 +84,10 @@ def construct_line(waypoints: MsgWaypoints, ptr: WaypointIndices) \
     # Construct the path
     path                = MsgPath()         # Path object
     path.plot_updated   = False             # Update plot
-    path.line_origin    = previous          # Origin of line
+
+    path.line_origin    = wp                # Origin of line
     path.line_direction = (w-wp)/n(w,wp)    # Direction of line
-    					    # Airspeed
+    					                    # Airspeed
     path.airspeed       = waypoints.airspeed[ptr.previous]
 
     # Construct the halfspace
@@ -95,6 +95,11 @@ def construct_line(waypoints: MsgWaypoints, ptr: WaypointIndices) \
     hs.point  = w                 # Half plane point
     q         = (wn-w)/n(wn,w)    # q_i
     qp        = (w-wp)/n(w,wp)    # q_{i-1}
-    hs.normal = (qp+q)/n(qp,-q)   # Normal vector
+    # If singularity
+    if (all(np.isclose(qp,-q))):
+        hs.normal = qp                # Normal vector
+    # Else behave normally
+    else:
+        hs.normal = (qp+q)/n(qp,-q)   # Normal vector
 
     return (path, hs)
