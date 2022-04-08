@@ -9,10 +9,11 @@ import numpy as np
 ##==============================================================================
 #
 def plot(solution,
-         tf     : float    = 15,
-         x_lbl  : str      = "t",
-         legend : np.array = ['x','y'],
-         title  : str      = "Model"):
+         tf        : float    = 15,
+         x_lbl     : str      = "t",
+         legend    : np.array = ['x','y'],
+         title     : str      = "Model",
+         show_plot : bool     = False):
     """
     Plotting module for ODE's.
 
@@ -32,5 +33,11 @@ def plot(solution,
     plt.xlabel(x_lbl)
     plt.legend(legend, shadow=True)
     plt.title(title)
-    plt.show()
+
+    # Determine whether to display or save plot
+    if show_plot:
+        plt.show()
+    else:
+        plt.savefig("img/"+title+".png")
+
     return
