@@ -6,6 +6,7 @@ function ProgressBar
 {
     # Variables
     s=$(basename ${3})
+    i=1
 
     # Process data
     let _progress=(${1}*100/${2}*100)/100
@@ -26,12 +27,15 @@ function ProgressBar
 declare -a scripts=(`find . -type f -name "*.py" ! -name "plot.py"`)
 
 # Loop through each script
-i=1
-
 for s in "${scripts[@]}"
 do
-    ProgressBar i ${#scripts[@]} $s
+    ## Update progress bar
+    ProgressBar $i ${#scripts[@]} $s
+    
+    ## Process script
     python $s
+    
+    ## Update Index
     i=$((i+1))
 done
 
