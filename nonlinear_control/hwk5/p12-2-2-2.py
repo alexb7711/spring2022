@@ -24,11 +24,12 @@ def model(t,x):
 
     """
     # Extract state
-    x1, x2, x3 = x
+    x1, x2, x3, u = x
+    x             = np.array([x1,x2,x3])
 
     # Calculate control
     k = np.array([10, 10, 5])
-    u = -k@x
+    u = -k@x[0:4]
 
     # Calculate ODEs
     xd1 = x1 + x2
@@ -36,7 +37,7 @@ def model(t,x):
     xd3 = u
 
     # Bundle ODEs
-    dx = [xd1, xd2, xd3]
+    dx = [xd1, xd2, xd3, u]
 
     return dx
 
@@ -51,11 +52,11 @@ tf = 15.0
 t = [t0, tf]
 
 ## Initial conditions
-x0 = [0.5, 0.1, 0.1]
+x0 = [0.5, 0.1, 0.1, 0]
 
 
 # Solve ode model
 sol = solve_ivp(model, t, x0, method='RK45', dense_output=True)
 
 # Plot solution
-plot(sol, tf=tf, title="12.2.2.2", legend=['x1', 'x2'])
+plot(sol, tf=tf, title="12.2.2.2", legend=['x1', 'x2', 'u'])

@@ -24,7 +24,7 @@ def model(t,x):
 
     """
     # Extract states
-    x1, x2 = x
+    x1, x2, u = x
 
     # Calculate z
     z1 = x1
@@ -40,7 +40,7 @@ def model(t,x):
     xd2 = 3*(x1**2)*x2 + x1 + u
 
     # Bundle ODEs
-    dx = [xd1, xd2]
+    dx = [xd1, xd2, u]
 
     return dx
 
@@ -55,11 +55,11 @@ tf = 15.0
 t = [t0, tf]
 
 ## Initial conditions
-x0 = [1, 0.1]
+x0 = [1, 0.1, 0]
 
 
 # Solve ode model
 sol = solve_ivp(model, t, x0, method='RK45', dense_output=True)
 
 # Plot solution
-plot(sol, tf=tf, title="12.2.2.1", legend=['x1', 'x2'])
+plot(sol, tf=tf, title="12.2.2.1", legend=['x1', 'x2', 'u'])

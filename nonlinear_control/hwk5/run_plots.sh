@@ -4,10 +4,6 @@
 # https://stackoverflow.com/questions/238073/how-to-add-a-progress-bar-to-a-shell-script
 function ProgressBar
 {
-    # Variables
-    s=$(basename ${3})
-    i=1
-
     # Process data
     let _progress=(${1}*100/${2}*100)/100
     let _done=(${_progress}*4)/10
@@ -22,6 +18,8 @@ function ProgressBar
     # 1.2.1.1 Progress : [########################################] 100%
     printf "\rProcessing $s: [${_fill// /#}${_empty// /-}] ${_progress}%% \r"
 }
+# Variables
+i=1
 
 # Create list of scripts to be ran
 declare -a scripts=(`find . -type f -name "*.py" ! -name "plot.py"`)
@@ -30,11 +28,11 @@ declare -a scripts=(`find . -type f -name "*.py" ! -name "plot.py"`)
 for s in "${scripts[@]}"
 do
     ## Update progress bar
-    ProgressBar $i ${#scripts[@]} $s
-    
+    ProgressBar $i ${#scripts[@]}
+
     ## Process script
     python $s
-    
+
     ## Update Index
     i=$((i+1))
 done

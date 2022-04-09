@@ -24,7 +24,7 @@ def model(t,x):
 
     """
     # Extract states
-    x1, x2 = x
+    x1, x2, u = x
 
     # Calculate control
     k = 0.25
@@ -36,7 +36,7 @@ def model(t,x):
     xd2 = -x1**3 + u
 
     # Bundle ODEs
-    dx = [xd1, xd2]
+    dx = [xd1, xd2, u]
 
     return dx
 
@@ -47,15 +47,15 @@ def model(t,x):
 
 ## Time horizon
 t0 = 0.0
-tf = 10000
+tf = 100
 t = [t0, tf]
 
 ## Initial conditions
-x0 = [0.5, 0.6]
+x0 = [0.5, 0.6, 0]
 
 
 # Solve ode model
 sol = solve_ivp(model, t, x0, method='RK45', dense_output=True)
 
 # Plot solution
-plot(sol, tf=tf, title="14.15_a", legend=['x1', 'x2'])
+plot(sol, tf=tf, title="14.15_a", legend=['x1', 'x2', 'u'])
