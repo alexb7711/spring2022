@@ -169,18 +169,59 @@ def compute_parameters(points: DubinsPoints) -> DubinsParamsStruct:
     dubin = DubinsParamsStruct()
 
     # Calculate distance and switching surfaces
-    dubin.L = 99999.
-    dubin.c_s = np.array([[0.], [0.],[0.]])
+    dubin.L     = 99999.
+    dubin.c_s   = np.array([[0.], [0.],[0.]])
     dubin.lam_s = 1
-    dubin.c_e = np.array([[0.], [0.],[0.]])
+    dubin.c_e   = np.array([[0.], [0.],[0.]])
     dubin.lam_e = 1
-    dubin.q1 = np.array([[0.], [0.],[0.]])
-    dubin.z1 = np.array([[0.], [0.],[0.]])
-    dubin.z2 = np.array([[0.], [0.],[0.]])
-    dubin.z3 = np.array([[0.], [0.],[0.]])
-    dubin.q3 = np.array([[0.], [0.],[0.]])
+    dubin.q1    = np.array([[0.], [0.],[0.]])
+    dubin.z1    = np.array([[0.], [0.],[0.]])
+    dubin.z2    = np.array([[0.], [0.],[0.]])
+    dubin.z3    = np.array([[0.], [0.],[0.]])
+    dubin.q3    = np.array([[0.], [0.],[0.]])
 
     return dubin
+
+def compute_c(ps_s, chi_s, p_e, chi_e, R):
+    """
+    Compute all the c values because you're a lazy person
+
+    Args:
+        ps_s  : Start point
+        chi_s : Start orientation
+        p_e   : Exit point
+        chi_e : Exit orientation
+        R     : Radius
+    Returns
+        c_rs: Center of start right turn
+        c_re: Center of end right turn
+        c_ls: Center of start left turn
+        c_le: Center of end left turn
+    """
+
+    # Right turns
+    c_rs = p_s + R*rotz(np.pi/2)@np.array([[cos(chi_s)], [np.sin(chi_s)], [0]])
+    c_ls = p_s + R*rotz(-np.pi/2)@np.array([[cos(chi_s)], [np.sin(chi_s)], [0]])
+
+    # Left turns
+    c_re = p_e + R*rotz(np.pi/2)@np.array([[cos(chi_e)], [np.sin(chi_e)], [0]])
+    c_le = p_e + R*rotz(-np.pi/2)@np.array([[cos(chi_e)], [np.sin(chi_e)], [0]])
+
+    return [c_rs, c_ls, c_re, c_le]
+
+def c_ang(p1,p2):
+    """
+    Calculate the angle between two points
+    """
+    # Point 1
+    x1 = p1.item(0)
+    y1 = p1.item(1)
+
+    # Point 2
+    x2 = p2.item(0)
+    y2 = p2.item(1)
+    return np.tan((y2-y1)/(x2-x1))
+
 
 def calculate_rsr(points: DubinsPoints) -> DubinsParamsStruct:
     """Calculates the Dubins parameters for the right-straight-right case
@@ -192,21 +233,43 @@ def calculate_rsr(points: DubinsPoints) -> DubinsParamsStruct:
         dubin: variables for the Dubins path
     """
 
+    # Lazy
+    n  = lambda a,b: np.linalg.norm(a-b)
+    pp = lambda a  : a%(2*np.pi)
+
     # Initialize output and extract inputs
-    dubin = DubinsParamsStruct()
+    dubin                       = DubinsParamsStruct()
     (p_s, chi_s, p_e, chi_e, R) = points.extract()
 
     # Calculate distance and switching surfaces
-    dubin.L = 99999.
-    dubin.c_s = np.array([[0.], [0.],[0.]])
-    dubin.lam_s = 1
-    dubin.c_e = np.array([[0.], [0.],[0.]])
-    dubin.lam_e = 1
-    dubin.q1 = np.array([[0.], [0.],[0.]])
-    dubin.z1 = np.array([[0.], [0.],[0.]])
-    dubin.z2 = np.array([[0.], [0.],[0.]])
-    dubin.z3 = np.array([[0.], [0.],[0.]])
-    dubin.q3 = np.array([[0.], [0.],[0.]])
+    ## Initialize length with arbitrary large number
+    dubin.L     = 99999.
+
+    ## Start and center circle origins
+    c_s, _, c_e, _, = compute_c(ps_s, chi_s, p_e, chi_e, R)
+    dubin.c_s       = c_s
+    dubin.c_e       = c_e
+
+    ## Orbit directions
+    dubin.lam_s = 1 # CW
+    dubin.lam_e = 1 # CW
+
+    dubin.q1 = (c_e-c_s)/n(c_e,c_s)            # Half plane normal
+    dubin.z1 = c_s + R*rotz(-np.pi/2)@dubin.q1 # Start point on half plan 1
+
+    dubin.q2 = dubin.q1                        # Half plane normal
+    dubin.z2 = c_e + R*rotz(-np.pi/2)@dubin.q2 # Intermediate point on half plane 2
+
+    e1       = np.array([[1],[0],[0]])         # e1
+    dubin.q3 = rotz(xhi_e)@e1                  # Half plane normal
+    dubin.z3 = p_e                             # End point on half plane 3
+
+    v = c_ang(p_e, p_s)
+
+    # Calculate Length
+    L = n(c_s, c_e) +                                           \
+        R*pp(2*np.pi + pp(v - np*pi/2) - pp(chi_s - np.pi/2)) + \
+        R*pp(2*np.pi + pp(chi_e - np.pi/2) + pp(v - np.pi/2))
 
     return dubin
 

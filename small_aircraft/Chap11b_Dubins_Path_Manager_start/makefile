@@ -1,25 +1,33 @@
 .PHONY:
-    install
-    clean
-    lint
-    help
+	setup
+	install
+	clean
+	run
+	test
 
-install:            ## Install the project
-    pip install -f requirements.txt -e .
+
+ENV_DIR = mav_venv
+BIN     = $(ENV_DIR)/bin
+DEP     = ../dependencies.txt
+PYTHON  = python
+
+install:
+	ipython kernel install --name "mav-venv" --user
+
+uninstall:
+	jupyter kernelspec uninstall "mav-venv"
+
+setup:            ## Install the project
+	python -m venv mav_venv
+	$(BIN)/pip install --upgrade pip
+	$(BIN)/pip install -f requirements.txt -e .
 
 clean:              ## Remove the project and its dependencies from your python environment. It also removes any downloaded cached files
-    pip uninstall -y mav_sim
-    pip cache purge
+	$(BIN)/pip uninstall -y $(ENV_DIR)
+	$(BIN)/pip cache purge
 
-lint:               ## Run pylint over the project
-    mypy --install-types --config-file mypy.ini --package mav_sim
-    mypy --install-types --config-file mypy.ini scripts/
-    pydocstyle -e --count mav_sim scripts
-    pylint --jobs 0 --rcfile .pylintrc mav_sim scripts/
+run:
+	$(BIN)/python ./book_assignments/mavsim_chap11.py
 
-format:             ## Auto format the current code
-    black mav_sim scripts
-    isort .
-
-help:               ## Print the help statements
-    @findstr /x "^[a-z]*[a-z_]*:.*##.*$" makefile
+test:
+	$(BIN)/python ./mav_sim/unit_tests/ch11b_dubins_path_manager_test.py
