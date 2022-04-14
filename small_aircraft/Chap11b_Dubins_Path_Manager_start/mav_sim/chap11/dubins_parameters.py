@@ -319,12 +319,12 @@ def calculate_rsl(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.lam_e = -1
 
     dubin.q1 = rotz(v2 + np.pi/2)@e1
-    dubin.z1 = c_s + R*rotz(v+v2)@e1
-    dubin.z2 = c_e + R*rotz(v+v2-np.pi)@e1
+    dubin.z1 = c_s + R*rotz(v2)@e1
+    dubin.z2 = c_e + R*rotz(v2+np.pi)@e1
     dubin.z3 = p_e
     dubin.q3 = rotz(chi_e)@e1
 
-    dubin.L = np.sqrt(l**2 - 4*R**2) + \
+    dubin.L = np.sqrt(l**2 - 4*(R**2)) + \
               R*pp( 2*np.pi + pp(v2) - pp(chi_s - np.pi/2) ) + \
               R*pp( 2*np.pi + pp(v2+np.pi) - pp(chi_e + np.pi/2) )
 
@@ -371,7 +371,7 @@ def calculate_lsr(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.z3 = p_e
     dubin.q3 = rotz(chi_e)@e1
 
-    dubin.L = np.sqrt(l**2 - 4*R**2) + \
+    dubin.L = np.sqrt(l**2 - 4*(R**2)) + \
               R*pp(2*np.pi + pp(chi_s + np.pi/2) - pp(v+v2)) + \
               R*pp(2*np.pi + pp(chi_e - np.pi/2) - pp(v+v2-np.pi))
 
