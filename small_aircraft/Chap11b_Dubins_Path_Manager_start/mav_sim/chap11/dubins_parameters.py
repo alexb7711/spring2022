@@ -148,6 +148,8 @@ class DubinsParameters:
         self.r3 = vals.z3            # Point on halfspace 3
         self.n3 = vals.q3            # Normal vector for halfspace 3
 
+##==============================================================================
+#
 def compute_parameters(points: DubinsPoints) -> DubinsParamsStruct:
     """Calculate the dubins paths parameters. Returns the parameters defining the shortest
        path between two oriented waypoints
@@ -182,12 +184,14 @@ def compute_parameters(points: DubinsPoints) -> DubinsParamsStruct:
 
     return dubin
 
-def compute_c(ps_s, chi_s, p_e, chi_e, R):
+##==============================================================================
+#
+def compute_c(p_s, chi_s, p_e, chi_e, R):
     """
     Compute all the c values because you're a lazy person
 
     Args:
-        ps_s  : Start point
+        p_s   : Start point
         chi_s : Start orientation
         p_e   : Exit point
         chi_e : Exit orientation
@@ -200,29 +204,37 @@ def compute_c(ps_s, chi_s, p_e, chi_e, R):
     """
 
     # Right turns
-    c_rs = p_s + R*rotz(np.pi/2)@np.array([[cos(chi_s)], [np.sin(chi_s)], [0]])
-    c_ls = p_s + R*rotz(-np.pi/2)@np.array([[cos(chi_s)], [np.sin(chi_s)], [0]])
+    c_rs = p_s + R*rotz(np.pi/2)@np.array([[np.cos(chi_s)], [np.sin(chi_s)], [0]])
+    c_ls = p_s + R*rotz(-np.pi/2)@np.array([[np.cos(chi_s)], [np.sin(chi_s)], [0]])
 
     # Left turns
-    c_re = p_e + R*rotz(np.pi/2)@np.array([[cos(chi_e)], [np.sin(chi_e)], [0]])
-    c_le = p_e + R*rotz(-np.pi/2)@np.array([[cos(chi_e)], [np.sin(chi_e)], [0]])
+    c_re = p_e + R*rotz(np.pi/2)@np.array([[np.cos(chi_e)], [np.sin(chi_e)], [0]])
+    c_le = p_e + R*rotz(-np.pi/2)@np.array([[np.cos(chi_e)], [np.sin(chi_e)], [0]])
 
     return [c_rs, c_ls, c_re, c_le]
 
+##==============================================================================
+#
 def c_ang(p1,p2):
     """
     Calculate the angle between two points
     """
-    # Point 1
-    x1 = p1.item(0)
-    y1 = p1.item(1)
+    # Lazy
+    pp = lambda a  : a%(2*np.pi)
 
-    # Point 2
-    x2 = p2.item(0)
-    y2 = p2.item(1)
-    return np.tan((y2-y1)/(x2-x1))
+    # Start points
+    sn = p1.item(0)
+    se = p1.item(1)
+
+    # End points
+    en = p2.item(0)
+    ee = p2.item(1)
+
+    return np.arctan2(ee-se,en-sn)
 
 
+##==============================================================================
+#
 def calculate_rsr(points: DubinsPoints) -> DubinsParamsStruct:
     """Calculates the Dubins parameters for the right-straight-right case
 
@@ -246,7 +258,7 @@ def calculate_rsr(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.L     = 99999.
 
     ## Start and center circle origins
-    c_s, _, c_e, _, = compute_c(ps_s, chi_s, p_e, chi_e, R)
+    c_s, _, c_e, _ = compute_c(p_s, chi_s, p_e, chi_e, R)
     dubin.c_s       = c_s
     dubin.c_e       = c_e
 
@@ -256,23 +268,23 @@ def calculate_rsr(points: DubinsPoints) -> DubinsParamsStruct:
 
     dubin.q1 = (c_e-c_s)/n(c_e,c_s)            # Half plane normal
     dubin.z1 = c_s + R*rotz(-np.pi/2)@dubin.q1 # Start point on half plan 1
-
-    dubin.q2 = dubin.q1                        # Half plane normal
-    dubin.z2 = c_e + R*rotz(-np.pi/2)@dubin.q2 # Intermediate point on half plane 2
+    dubin.z2 = c_e + R*rotz(-np.pi/2)@dubin.q1 # Intermediate point on half plane 2
 
     e1       = np.array([[1],[0],[0]])         # e1
-    dubin.q3 = rotz(xhi_e)@e1                  # Half plane normal
+    dubin.q3 = rotz(chi_e)@e1                  # Half plane normal
     dubin.z3 = p_e                             # End point on half plane 3
 
-    v = c_ang(p_e, p_s)
+    v = c_ang(p_s, p_e)
 
     # Calculate Length
-    L = n(c_s, c_e) +                                           \
-        R*pp(2*np.pi + pp(v - np*pi/2) - pp(chi_s - np.pi/2)) + \
-        R*pp(2*np.pi + pp(chi_e - np.pi/2) + pp(v - np.pi/2))
+    dubin.L = n(c_s, c_e) +                                           \
+              R*pp(2*np.pi + pp(v - np.pi/2) - pp(chi_s - np.pi/2)) + \
+              R*pp(2*np.pi + pp(chi_e - np.pi/2) - pp(v - np.pi/2))
 
     return dubin
 
+##==============================================================================
+#
 def calculate_rsl(points: DubinsPoints) -> DubinsParamsStruct:
     """Calculates the Dubins parameters for the right-straight-left case
 
@@ -282,6 +294,9 @@ def calculate_rsl(points: DubinsPoints) -> DubinsParamsStruct:
     Returns:
         dubin: variables for the Dubins path
     """
+    # Lazy
+    n  = lambda a,b: np.linalg.norm(a-b)
+    pp = lambda a  : a%(2*np.pi)
 
     # Initialize output and extract inputs
     dubin = DubinsParamsStruct()
@@ -289,18 +304,34 @@ def calculate_rsl(points: DubinsPoints) -> DubinsParamsStruct:
 
     # Calculate distance and switching surfaces
     dubin.L = 99999.
-    dubin.c_s = np.array([[0.], [0.],[0.]])
+
+    ## Start and center circle origins
+    c_s, _, _, c_e = compute_c(p_s, chi_s, p_e, chi_e, R)
+    dubin.c_s       = c_s
+    dubin.c_e       = c_e
+
+    v  = c_ang(p_s,p_e)
+    l  = n(c_e,c_s)
+    v2 = v - np.pi/2 + np.arcsin(2*R/l)
+    e1 = np.array([[1],[0],[0]])         # e1
+
     dubin.lam_s = 1
-    dubin.c_e = np.array([[0.], [0.],[0.]])
-    dubin.lam_e = 1
-    dubin.q1 = np.array([[0.], [0.],[0.]])
-    dubin.z1 = np.array([[0.], [0.],[0.]])
-    dubin.z2 = np.array([[0.], [0.],[0.]])
-    dubin.z3 = np.array([[0.], [0.],[0.]])
-    dubin.q3 = np.array([[0.], [0.],[0.]])
+    dubin.lam_e = -1
+
+    dubin.q1 = rotz(v2 + np.pi/2)@e1
+    dubin.z1 = c_s + R*rotz(v+v2)@e1
+    dubin.z2 = c_e + R*rotz(v+v2-np.pi)@e1
+    dubin.z3 = p_e
+    dubin.q3 = rotz(chi_e)@e1
+
+    dubin.L = np.sqrt(l**2 - 4*R**2) + \
+              R*pp( 2*np.pi + pp(v2) - pp(chi_s - np.pi/2) ) + \
+              R*pp( 2*np.pi + pp(v2+np.pi) - pp(chi_e + np.pi/2) )
 
     return dubin
 
+##==============================================================================
+#
 def calculate_lsr(points: DubinsPoints) -> DubinsParamsStruct:
     """Calculates the Dubins parameters for the left-straight-right case
 
@@ -310,6 +341,9 @@ def calculate_lsr(points: DubinsPoints) -> DubinsParamsStruct:
     Returns:
         dubin: variables for the Dubins path
     """
+    # Lazy
+    n  = lambda a,b: np.linalg.norm(a-b)
+    pp = lambda a  : a%(2*np.pi)
 
     # Initialize output and extract inputs
     dubin = DubinsParamsStruct()
@@ -317,18 +351,34 @@ def calculate_lsr(points: DubinsPoints) -> DubinsParamsStruct:
 
     # Calculate distance and switching surfaces
     dubin.L = 99999.
-    dubin.c_s = np.array([[0.], [0.],[0.]])
-    dubin.lam_s = 1
-    dubin.c_e = np.array([[0.], [0.],[0.]])
+
+    ## Start and center circle origins
+    _, c_s, c_e, _ = compute_c(p_s, chi_s, p_e, chi_e, R)
+    dubin.c_s       = c_s
+    dubin.c_e       = c_e
+
+    dubin.lam_s = -1
     dubin.lam_e = 1
-    dubin.q1 = np.array([[0.], [0.],[0.]])
-    dubin.z1 = np.array([[0.], [0.],[0.]])
-    dubin.z2 = np.array([[0.], [0.],[0.]])
-    dubin.z3 = np.array([[0.], [0.],[0.]])
-    dubin.q3 = np.array([[0.], [0.],[0.]])
+
+    v  = c_ang(p_s,p_e)
+    l  = n(c_e,c_s)
+    v2 = np.arccos(2*R/l)
+    e1 = np.array([[1],[0],[0]])         # e1
+
+    dubin.q1 = rotz(v+v2-np.pi/2)@e1
+    dubin.z1 = c_s + R*rotz(v+v2)@e1
+    dubin.z2 = c_e + R*rotz(v+v2-np.pi)@e1
+    dubin.z3 = p_e
+    dubin.q3 = rotz(chi_e)@e1
+
+    dubin.L = np.sqrt(l**2 - 4*R**2) + \
+              R*pp(2*np.pi + pp(chi_s + np.pi/2) - pp(v+v2)) + \
+              R*pp(2*np.pi + pp(chi_e - np.pi/2) - pp(v+v2-np.pi))
 
     return dubin
 
+##==============================================================================
+#
 def calculate_lsl(points: DubinsPoints) -> DubinsParamsStruct:
     """Calculates the Dubins parameters for the left-straight-left case
 
@@ -338,6 +388,9 @@ def calculate_lsl(points: DubinsPoints) -> DubinsParamsStruct:
     Returns:
         dubin: variables for the Dubins path
     """
+    # Lazy
+    n  = lambda a,b: np.linalg.norm(a-b)
+    pp = lambda a  : a%(2*np.pi)
 
     # Initialize output and extract inputs
     dubin = DubinsParamsStruct()
@@ -345,18 +398,33 @@ def calculate_lsl(points: DubinsPoints) -> DubinsParamsStruct:
 
     # Calculate distance and switching surfaces
     dubin.L = 99999.
-    dubin.c_s = np.array([[0.], [0.],[0.]])
-    dubin.lam_s = 1
-    dubin.c_e = np.array([[0.], [0.],[0.]])
-    dubin.lam_e = 1
-    dubin.q1 = np.array([[0.], [0.],[0.]])
-    dubin.z1 = np.array([[0.], [0.],[0.]])
-    dubin.z2 = np.array([[0.], [0.],[0.]])
-    dubin.z3 = np.array([[0.], [0.],[0.]])
-    dubin.q3 = np.array([[0.], [0.],[0.]])
+
+    ## Start and center circle origins
+    _, c_s, _, c_e = compute_c(p_s, chi_s, p_e, chi_e, R)
+    dubin.c_s       = c_s
+    dubin.c_e       = c_e
+
+    dubin.lam_s = -1
+    dubin.lam_e = -1
+
+    e1 = np.array([[1],[0],[0]])         # e1
+
+    dubin.q1 = (c_e - c_s)/n(c_e,c_s)
+    dubin.z1 = c_s + R*rotz(np.pi/2)@dubin.q1
+    dubin.z2 = c_e + R*rotz(np.pi/2)@dubin.q1
+    dubin.z3 = p_e
+    dubin.q3 = rotz(chi_e)@e1
+
+    v  = c_ang(p_s,p_e)
+
+    dubin.L = n(c_s, c_e) + \
+              R*pp(2*np.pi + pp(chi_s + np.pi/2) - pp(v + np.pi/2)) + \
+              R*pp(2*np.pi + pp(v + np.pi/2) - pp(chi_e + np.pi/2))
 
     return dubin
 
+##==============================================================================
+#
 def mod(x: float) -> float:
     """Computes the modulus of x with respect to 2 pi
 
