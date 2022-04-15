@@ -5,8 +5,10 @@
 import numpy as np
 from mav_sim.chap11.dubins_parameters import DubinsParameters
 from mav_sim.chap11.path_manager_utilities import (
+    EPSILON,
     HalfSpaceParams,
     WaypointIndices,
+    extract_waypoints,
     get_airspeed,
     inHalfSpace,
 )
@@ -44,12 +46,81 @@ def dubins_manager(state: MsgState, waypoints: MsgWaypoints, ptr_prv: WaypointIn
         manager_state (int): The current state of the manager
     """
     # Default the outputs to be the inputs
-    path = path_prv
-    hs = hs_prv
-    ptr = ptr_prv
+    path        = path_prv
+    hs          = hs_prv
+    ptr         = ptr_prv
     dubins_path = dubins_path_prv
 
-    # Manage the Dubins sections
+    # If a new set of waypoints have been set
+    if waypoints.flag_waypoints_changed is True:
+        ## Unset waypoint flag
+        waypoints.flag_waypoints_changed = False
+        ## Resets the pointers
+        ptr = WaypointIndices()
+        ## Initialize to first state
+        manager_state = 1
+        ## Calculate parameters
+        c = waypoints.get_waypoint(ptr.current)
+        n = waypoints.get_waypoint(ptr.next)
+        ### Calc parameters
+        dubins_path = DubinsParameters(p_s=c.ned, chi_s=c.course, p_e=n.ned, chi_e=n.course)
+        ### Start turn
+        path,hs = construct_dubins_circle_start(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
+
+    # Store position of vehicle
+    pos = np.array([[state.north, state.east, -state.altitude]]).T
+
+    ## Circle Start
+    if manager_state == 1:
+        ## Wait until behind first half plane k
+        nhs = HalfSpaceParams(normal=-dubins_path.n1, point=dubins_path.r1)
+        if inHalfSpace(pos, nhs):
+            manager_state = 2
+
+    ## Second portion of the start circle
+    elif manager_state == 2:
+        path,hs = construct_dubins_circle_start(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
+
+        if inHalfSpace(pos, hs_prv):
+            manager_state = 3
+
+    ## Straight line segment
+    elif manager_state == 3:
+        path,hs = construct_dubins_line(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
+
+        if inHalfSpace(pos, hs_prv):
+            manager_state = 4
+
+    ## First portion of ending circle
+    elif manager_state == 4:
+        ## Wait until behind last half plane
+        if inHalfSpace(pos, hs_prv):
+            manager_state = 5
+
+    ## Second portion of ending circle
+    elif manager_state == 5:
+        path,hs = construct_dubins_circle_end(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
+
+        if inHalfSpace(pos, hs_prv):
+            # Increment waypoint
+            ptr.increment_pointers(waypoints.num_waypoints)
+            ## Extract waypoints
+            c = waypoints.get_waypoint(ptr.current)
+            n = waypoints.get_waypoint(ptr.next)
+            ### Calc parameters
+            dubins_path = DubinsParameters(p_s=c.ned, chi_s=c.course, p_e=n.ned, chi_e=n.course)
+            ### Start turn
+            path,hs = construct_dubins_circle_start(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
+            # Reset back to start
+            manager_state = 1
+    else:
+        raise ValueError("Invalid manager state")
+
+    # print(path)
+    # print(hs)
+    # print(ptr)
+    # print(manager_state)
+    # input(dubins_path)
 
     return (path, hs, ptr, manager_state, dubins_path)
 
@@ -73,9 +144,12 @@ def construct_dubins_circle_start(waypoints: MsgWaypoints, ptr: WaypointIndices,
     path.airspeed = get_airspeed(waypoints, ptr)
 
     # Fill in remaining parameters
+    path.orbit_center = dubins_path.center_s
+    path.orbit_direction = dubins_path.dir_s
+    path.orbit_radius = dubins_path.radius
 
     # Define the switching halfspace
-    hs = HalfSpaceParams()
+    hs = HalfSpaceParams(normal=dubins_path.n1, point=dubins_path.r1)
 
     return (path, hs)
 
@@ -100,9 +174,11 @@ def construct_dubins_line(waypoints: MsgWaypoints, ptr: WaypointIndices, dubins_
     path.airspeed = get_airspeed(waypoints, ptr)
 
     # Fill in remaining parameters
+    path.line_direction = dubins_path.n1
+    path.line_origin    = dubins_path.r1
 
     # Define the switching halfspace
-    hs = HalfSpaceParams()
+    hs = HalfSpaceParams(normal=dubins_path.n1, point=dubins_path.r2)
 
     return (path, hs)
 
@@ -127,8 +203,11 @@ def construct_dubins_circle_end(waypoints: MsgWaypoints, ptr: WaypointIndices, d
     path.airspeed = get_airspeed(waypoints, ptr)
 
     # Fill in remaining parameters
+    path.orbit_center = dubins_path.center_e
+    path.orbit_direction = dubins_path.dir_e
+    path.orbit_radius = dubins_path.radius
 
     # Define the switching halfspace
-    hs = HalfSpaceParams()
+    hs = HalfSpaceParams(normal=dubins_path.n3, point=dubins_path.r3)
 
     return (path, hs)

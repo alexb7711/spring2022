@@ -7,7 +7,7 @@ import os
 import pickle
 from typing import Any, Dict, List, Tuple, Union
 
-PRECISION = 1e-4
+PRECISION = 1e-3
 
 import numpy as np
 from mav_sim.chap11.dubins_parameters import (
