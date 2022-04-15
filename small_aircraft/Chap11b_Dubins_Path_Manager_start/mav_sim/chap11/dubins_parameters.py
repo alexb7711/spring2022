@@ -171,7 +171,7 @@ def compute_parameters(points: DubinsPoints) -> DubinsParamsStruct:
     paths = [calculate_rsr, calculate_rls, calculate_lsr, calculate_lsl]
     L     = 999999
     idx   = 0
-    
+
     ## Loop through each doobin option and find the shortest path
     for i in len(paths):
      if paths[i] < L:
@@ -216,7 +216,6 @@ def c_ang(p1,p2):
     Calculate the angle between two points
     """
     # Lazy
-    pp = lambda a  : a%(2*np.pi)
 
     # Start points
     sn = p1.item(0)
@@ -243,7 +242,6 @@ def calculate_rsr(points: DubinsPoints) -> DubinsParamsStruct:
 
     # Lazy
     n  = lambda a,b: np.linalg.norm(a-b)
-    pp = lambda a  : a%(2*np.pi)
 
     # Initialize output and extract inputs
     dubin                       = DubinsParamsStruct()
@@ -270,12 +268,12 @@ def calculate_rsr(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.q3 = rotz(chi_e)@e1                  # Half plane normal
     dubin.z3 = p_e                             # End point on half plane 3
 
-    v = c_ang(p_s, p_e)
+    v = c_ang(c_s, c_e)
 
     # Calculate Length
     dubin.L = n(c_s, c_e) +                                           \
-              R*pp(2*np.pi + pp(v - np.pi/2) - pp(chi_s - np.pi/2)) + \
-              R*pp(2*np.pi + pp(chi_e - np.pi/2) - pp(v - np.pi/2))
+              R*mod(2*np.pi + mod(v - np.pi/2) - mod(chi_s - np.pi/2)) + \
+              R*mod(2*np.pi + mod(chi_e - np.pi/2) - mod(v - np.pi/2))
 
     return dubin
 
@@ -292,7 +290,6 @@ def calculate_rsl(points: DubinsPoints) -> DubinsParamsStruct:
     """
     # Lazy
     n  = lambda a,b: np.linalg.norm(a-b)
-    pp = lambda a  : a%(2*np.pi)
 
     # Initialize output and extract inputs
     dubin = DubinsParamsStruct()
@@ -306,7 +303,7 @@ def calculate_rsl(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.c_s       = c_s
     dubin.c_e       = c_e
 
-    v  = c_ang(p_s,p_e)
+    v  = c_ang(c_s,c_e)
     l  = n(c_e,c_s)
     v2 = v - np.pi/2 + np.arcsin(2*R/l)
     e1 = np.array([[1],[0],[0]])         # e1
@@ -321,8 +318,8 @@ def calculate_rsl(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.q3 = rotz(chi_e)@e1
 
     dubin.L = np.sqrt(l**2 - 4*(R**2)) + \
-              R*pp( 2*np.pi + pp(v2) - pp(chi_s - np.pi/2) ) + \
-              R*pp( 2*np.pi + pp(v2+np.pi) - pp(chi_e + np.pi/2) )
+              R*mod( 2*np.pi + mod(v2) - mod(chi_s - np.pi/2) ) + \
+              R*mod( 2*np.pi + mod(v2+np.pi) - mod(chi_e + np.pi/2) )
 
     return dubin
 
@@ -339,7 +336,6 @@ def calculate_lsr(points: DubinsPoints) -> DubinsParamsStruct:
     """
     # Lazy
     n  = lambda a,b: np.linalg.norm(a-b)
-    pp = lambda a  : a%(2*np.pi)
 
     # Initialize output and extract inputs
     dubin = DubinsParamsStruct()
@@ -356,7 +352,7 @@ def calculate_lsr(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.lam_s = -1
     dubin.lam_e = 1
 
-    v  = c_ang(p_s,p_e)
+    v  = c_ang(c_s,c_e)
     l  = n(c_e,c_s)
     v2 = np.arccos(2*R/l)
     e1 = np.array([[1],[0],[0]])         # e1
@@ -368,8 +364,8 @@ def calculate_lsr(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.q3 = rotz(chi_e)@e1
 
     dubin.L = np.sqrt(l**2 - 4*(R**2)) + \
-              R*pp(2*np.pi + pp(chi_s + np.pi/2) - pp(v+v2)) + \
-              R*pp(2*np.pi + pp(chi_e - np.pi/2) - pp(v+v2-np.pi))
+              R*mod(2*np.pi + mod(chi_s + np.pi/2) - mod(v+v2)) + \
+              R*mod(2*np.pi + mod(chi_e - np.pi/2) - mod(v+v2-np.pi))
 
     return dubin
 
@@ -386,7 +382,6 @@ def calculate_lsl(points: DubinsPoints) -> DubinsParamsStruct:
     """
     # Lazy
     n  = lambda a,b: np.linalg.norm(a-b)
-    pp = lambda a  : a%(2*np.pi)
 
     # Initialize output and extract inputs
     dubin = DubinsParamsStruct()
@@ -411,11 +406,11 @@ def calculate_lsl(points: DubinsPoints) -> DubinsParamsStruct:
     dubin.z3 = p_e
     dubin.q3 = rotz(chi_e)@e1
 
-    v  = c_ang(p_s,p_e)
+    v  = c_ang(c_s,c_e)
 
     dubin.L = n(c_s, c_e) + \
-              R*pp(2*np.pi + pp(chi_s + np.pi/2) - pp(v + np.pi/2)) + \
-              R*pp(2*np.pi + pp(v + np.pi/2) - pp(chi_e + np.pi/2))
+              R*mod(2*np.pi + mod(chi_s + np.pi/2) - mod(v + np.pi/2)) + \
+              R*mod(2*np.pi + mod(v + np.pi/2) - mod(chi_e + np.pi/2))
 
     return dubin
 
