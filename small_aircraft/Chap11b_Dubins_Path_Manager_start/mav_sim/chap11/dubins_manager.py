@@ -60,10 +60,10 @@ def dubins_manager(state: MsgState, waypoints: MsgWaypoints, ptr_prv: WaypointIn
         ## Initialize to first state
         manager_state = 1
         ## Calculate parameters
-        c = waypoints.get_waypoint(ptr.current)
-        n = waypoints.get_waypoint(ptr.next)
+        c = waypoints.get_waypoint(ptr.previous)
+        n = waypoints.get_waypoint(ptr.current)
         ### Calc parameters
-        dubins_path = DubinsParameters(p_s=c.ned, chi_s=c.course, p_e=n.ned, chi_e=n.course)
+        dubins_path = DubinsParameters(p_s=c.ned, chi_s=c.course, p_e=n.ned, chi_e=n.course, R=radius)
         ### Start turn
         path,hs = construct_dubins_circle_start(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
 
@@ -72,6 +72,9 @@ def dubins_manager(state: MsgState, waypoints: MsgWaypoints, ptr_prv: WaypointIn
 
     ## Circle Start
     if manager_state == 1:
+        ### Start turn
+        path,hs = construct_dubins_circle_start(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
+
         ## Wait until behind first half plane k
         nhs = HalfSpaceParams(normal=-dubins_path.n1, point=dubins_path.r1)
         if inHalfSpace(pos, nhs):
@@ -79,48 +82,52 @@ def dubins_manager(state: MsgState, waypoints: MsgWaypoints, ptr_prv: WaypointIn
 
     ## Second portion of the start circle
     elif manager_state == 2:
-        path,hs = construct_dubins_circle_start(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
-
-        if inHalfSpace(pos, hs_prv):
+        if inHalfSpace(pos, hs):
             manager_state = 3
 
     ## Straight line segment
     elif manager_state == 3:
         path,hs = construct_dubins_line(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
 
-        if inHalfSpace(pos, hs_prv):
+        if inHalfSpace(pos, hs):
             manager_state = 4
 
     ## First portion of ending circle
     elif manager_state == 4:
+        path,hs = construct_dubins_circle_end(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
+
+
         ## Wait until behind last half plane
-        if inHalfSpace(pos, hs_prv):
+        nhs = HalfSpaceParams(normal=-dubins_path.n3, point=dubins_path.r3)
+        if inHalfSpace(pos, nhs):
             manager_state = 5
 
     ## Second portion of ending circle
     elif manager_state == 5:
-        path,hs = construct_dubins_circle_end(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
-
-        if inHalfSpace(pos, hs_prv):
+        if inHalfSpace(pos, hs):
             # Increment waypoint
             ptr.increment_pointers(waypoints.num_waypoints)
             ## Extract waypoints
-            c = waypoints.get_waypoint(ptr.current)
-            n = waypoints.get_waypoint(ptr.next)
+            c = waypoints.get_waypoint(ptr.previous)
+            n = waypoints.get_waypoint(ptr.current)
             ### Calc parameters
             dubins_path = DubinsParameters(p_s=c.ned, chi_s=c.course, p_e=n.ned, chi_e=n.course)
-            ### Start turn
-            path,hs = construct_dubins_circle_start(waypoints=waypoints, ptr=ptr, dubins_path=dubins_path)
             # Reset back to start
             manager_state = 1
+            print("swap")
     else:
         raise ValueError("Invalid manager state")
+
+    # print("previous: ", waypoints.get_waypoint(ptr.previous).ned)
+    # print("current: ", waypoints.get_waypoint(ptr.current).ned)
+    # print("next: ", waypoints.get_waypoint(ptr.next).ned)
+    # print("pos: ", pos.tolist())
 
     # print(path)
     # print(hs)
     # print(ptr)
     # print(manager_state)
-    # input(dubins_path)
+    #input(dubins_path)
 
     return (path, hs, ptr, manager_state, dubins_path)
 

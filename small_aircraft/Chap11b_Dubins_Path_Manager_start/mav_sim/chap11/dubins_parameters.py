@@ -168,17 +168,20 @@ def compute_parameters(points: DubinsPoints) -> DubinsParamsStruct:
         raise ValueError('Error in Dubins Parameters: The distance between nodes must be larger than 2R.')
 
     # Calculate distance and switching surfaces
-    paths = [calculate_rsr, calculate_rls, calculate_lsr, calculate_lsl]
+    paths = [calculate_rsr, calculate_rsl, calculate_lsr, calculate_lsl]
     L     = 999999
     idx   = 0
 
     ## Loop through each doobin option and find the shortest path
-    for i in len(paths):
-     if paths[i] < L:
-      L   = paths[i]
-      idx = i
+    for i in range(len(paths)):
+     d = paths[i](points)
+     if d.L < L:
+         L   = d.L
+         idx = i
 
-    return paths[idx]
+    # input(idx)
+
+    return paths[idx](points)
 
 ##==============================================================================
 #
