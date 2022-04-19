@@ -139,7 +139,6 @@ def construct_fillet_circle(waypoints: MsgWaypoints, ptr: WaypointIndices, radiu
     """Define the circle on a fillet
 
     Args:
-    if inHalfSpace(state.)
         waypoints: The waypoints to be followed
         ptr: The indices of the waypoints being used for the path
         radius: minimum radius circle for the mav
