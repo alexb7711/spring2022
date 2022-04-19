@@ -62,7 +62,7 @@ def find_shortest_path(tree: MsgWaypoints, end_pose: NP_MAT) -> MsgWaypoints:
         end_pose: Desired end pose of the path
 
     Returns:
-        waypoints: The shortest path
+        shortest_path: The shortest path
     """
     # Local variables
     waypoints = []
@@ -72,22 +72,28 @@ def find_shortest_path(tree: MsgWaypoints, end_pose: NP_MAT) -> MsgWaypoints:
         if tree.get_waypoint(i).connect_to_goal == True:
             waypoints.insert(0,tree.get_waypoint(i))
             break
-
+            
+    # Loop backwards until the root node is found
     while True:
-        # If we are at the beginning break
+        ## If we are at the beginning break
         if waypoints[0].parent == False:
             break
 
-        # Insert the parent node
+        ## Insert the parent node
         parent_node = tree.get_waypoint(int(waypoints[0].parent))
         waypoints.insert(0,parent_node)
 
-    stupid_wp = MsgWaypoints()
-
+    # Create shortest path
+    shortest_path = MsgWaypoints()
+              
+    ## Loop through each waypoint and add it to MsgWaypoints
     for w in (waypoints):
-        stupid_wp.add_waypoint(w)
+        shortest_path.add_waypoint(w)
+        
+    ## Add final node
+    shortest_path.add(end_pose, airspeed=waypoints[0].airspeed, parent=i)
 
-    return stupid_wp
+    return shortest_path
 
 ##==============================================================================
 ##
