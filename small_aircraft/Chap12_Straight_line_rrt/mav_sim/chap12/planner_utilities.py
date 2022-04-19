@@ -257,9 +257,7 @@ def exist_feasible_path(start_pose: NP_MAT, end_pose: NP_MAT, world_map: MsgWorl
     """
     # Local variables
     valid_pose = True
-    ## Generate line of points
     points     = points_along_path(start_pose, end_pose, 100)
-
 
     # Loop through each obstacle
     for i in range(points.shape[1]):
@@ -268,28 +266,28 @@ def exist_feasible_path(start_pose: NP_MAT, end_pose: NP_MAT, world_map: MsgWorl
             return False
 
         ## Get next point
-        pn         = points[i].item(0)
-        pe         = points[i].item(1)
-        pd         = points[i].item(2)
+        pn = points[i].item(0)
+        pe = points[i].item(1)
+        pd = points[i].item(2)
 
+        ## Loop through each building
         for j in range(len(world_map.building_east)):
-            ## Building width
+            ### Building dimensions
             b_pe   = world_map.building_east.item(j)  + world_map.city_width/2
             b_ne   = world_map.building_east.item(j)  - world_map.city_width/2
             b_pn   = world_map.building_north.item(j) + world_map.city_width/2
             b_nn   = world_map.building_north.item(j) - world_map.city_width/2
 
-            # print(b_pe)
-            # print(b_ne)
-            # print(b_pn)
-            # print(b_nn)
-            # print(pn)
-            # print(pe)
-            # input(pd)
-
-            ## Check for collision
+            ### Check for collision
             if (pn >= b_nn or pn <= b_pn) and \
                (pe >= b_ne or pe <= b_pe):
+                # print(b_pe)
+                # print(b_ne)
+                # print(b_pn)
+                # print(b_nn)
+                # print(pn)
+                # print(pe)
+                # input(pd)
                 valid_pose = False
                 break
 
@@ -323,16 +321,18 @@ def height_above_ground(world_map: MsgWorldMap, point: NP_MAT) -> float:
         h_agl: Height at the position (A negative value implies a collision)
     """
     point_height = -point.item(2)
-    tmp = np.abs(point.item(0)-world_map.building_north)
-    d_n = np.min(tmp)
-    idx_n = np.argmin(tmp)
-    tmp = np.abs(point.item(1)-world_map.building_east)
-    d_e = np.min(tmp)
-    idx_e = np.argmin(tmp)
+    tmp          = np.abs(point.item(0)-world_map.building_north)
+    d_n          = np.min(tmp)
+    idx_n        = np.argmin(tmp)
+    tmp          = np.abs(point.item(1)-world_map.building_east)
+    d_e          = np.min(tmp)
+    idx_e        = np.argmin(tmp)
+                                       
     if (d_n<world_map.building_width) and (d_e<world_map.building_width):
         map_height = world_map.building_height[idx_n, idx_e]
     else:
         map_height = 0
+                                       
     h_agl = point_height - map_height
     return float(h_agl)
 
@@ -349,14 +349,16 @@ def points_along_path(start_pose: NP_MAT, end_pose: NP_MAT, N: int) -> NP_MAT:
     Returns:
         points: Points along line between start and end pose
     """
-    points = start_pose
+    points    = start_pose
     q: NP_MAT = (end_pose - start_pose)
-    L = np.linalg.norm(q)
-    q = q / L
-    w = start_pose
+    L         = np.linalg.norm(q)
+    q         = q / L
+    w         = start_pose
+                                       
     for _ in range(1, N):
         w = w + (L / N) * q
         points = np.append(points, w, axis=1)
+                                       
     return points
 
 ##==============================================================================
