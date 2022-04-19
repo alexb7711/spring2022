@@ -65,32 +65,51 @@ def find_shortest_path(tree: MsgWaypoints, end_pose: NP_MAT) -> MsgWaypoints:
         shortest_path: The shortest path
     """
     # Local variables
-    waypoints = []
+    candiate_end_nodes = [] # All the waypoints that are connected to the goal
+    candidate_paths    = [] # All the paths from root to the goal
+    candidate_costs    = [] # Cost to use path
 
-    # Find the goal node
+    # Find all the nodes connected to the goal
     for i in range(tree.num_waypoints):
         if tree.get_waypoint(i).connect_to_goal == True:
-            waypoints.insert(0,tree.get_waypoint(i))
-            break
-            
-    # Loop backwards until the root node is found
-    while True:
-        ## If we are at the beginning break
-        if waypoints[0].parent == False:
-            break
+            candidate_end_nodes.append(tree.get_waypoint(i)
 
-        ## Insert the parent node
-        parent_node = tree.get_waypoint(int(waypoints[0].parent))
-        waypoints.insert(0,parent_node)
+    # For each candidate, calculate the cost of the path
+    for i in range(len(candidate_end_nodes)):
+        cost = 0               # Initialize cost
+        wp   = []              # Array of waypoints
+                                       
+        ## Initialize wp with end node
+        wp.append(candidate_end_nodes[i])
+        cost += wp[0].cost
+
+        ## Loop backwards until the root node is found
+        while True:
+            ### If we are at the beginning break
+            if wp[0].parent == False:
+                break
+                                       
+            ### Insert the parent node
+            parent_node = tree.get_waypoint(int(wp[0].parent))
+            wp.insert(0,parent_node)
+                                       
+            ### Add cost of waypoint
+            cost += wp[0].cost
+                                       
+        ## Update candidates
+        candidate_paths.append(wp)
+        candidate_costs.append(cost)
+                                       
+    # Find shortest path
+    idx = index(min(candidate_costs))
 
     # Create shortest path
     shortest_path = MsgWaypoints()
               
     ## Loop through each waypoint and add it to MsgWaypoints
-    for w in (waypoints):
-        shortest_path.add_waypoint(w)
+    for w in (candidate_paths[idx]): shortest_path.add_waypoint(w)
         
-    ## Add final node
+    ## Add final node (may not be necessary?)
     shortest_path.add(end_pose, airspeed=waypoints[0].airspeed, parent=i)
 
     return shortest_path
