@@ -29,21 +29,32 @@ def smooth_path(waypoints: MsgWaypoints, world_map: MsgWorldMap) -> MsgWaypoints
     """
 
     # Local variables
-    i           = 0
-    j           = 1
-    smooth_path = MsgWaypoints()
-    smooth_path.add_waypoint(waypoints.get_waypoint(0))
+    i           = 0                                     # Start at root node
+    j           = 1                                     # Start at next node in path
+    smooth_path = MsgWaypoints()                        # Smoothed path
+    smooth_path.add_waypoint(waypoints.get_waypoint(i)) # Add root waypoint to smooth path
 
-    while j < waypoints.num_waypoints-1:
-        ws = smooth_path.get_waypoint(i)
-        wp = waypoints.get_waypoint(j+1)
+    # While we have not reached the objective
+    while j < waypoints.num_waypoints:
+        ## Check if we are going out of bound
+        if j+1 == waypoints.num_waypoints:
+            break
 
+        ## Update waypoints
+        ws = smooth_path.get_waypoint(i) # Starting waypoint is set to index i
+        wp = waypoints.get_waypoint(j+1) # End waypoint is the is looking one after j
+
+        ## If waypoint j+1 collides with an object, use the previous node
         if not exist_feasible_path(ws.ned, wp.ned, world_map):
+            ### Add node j to path
             smooth_path.add_waypoint(waypoints.get_waypoint(j))
+            ### Make node j the new starting waypoint
             i = j
+            
+        ## Increment j to the next waypoint
+        j += 1
 
-        j = j+1
-
+    # Add last node to waypoint
     smooth_path.add_waypoint(waypoints.get_ned(waypoints.num_waypoints-1))
 
     return smooth_waypoints
