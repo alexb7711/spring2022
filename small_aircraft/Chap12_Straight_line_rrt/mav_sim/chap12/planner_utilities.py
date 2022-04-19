@@ -35,7 +35,7 @@ def smooth_path(waypoints: MsgWaypoints, world_map: MsgWorldMap) -> MsgWaypoints
     smooth_path.add_waypoint(waypoints.get_waypoint(i)) # Add root waypoint to smooth path
 
     # While we have not reached the objective
-    while j < waypoints.num_waypoints:
+    for j in range(waypoints.num_waypoints):
         ## Check if we are going out of bound
         if j+1 == waypoints.num_waypoints:
             break
