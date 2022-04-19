@@ -150,18 +150,16 @@ def generate_random_configuration(world_map: MsgWorldMap, pd: float) -> NP_MAT:
     block_width = city_width/world_map.num_city_blocks
     scale       = 1
 
-    # Loop until a new valid position is found
-    while (True):
-        ## generate a random pose
-        ### Generate random step
-        D  = np.randint(scale*block_width, scale*city_width)
+    # generate a random pose
+    ## Generate random step
+    D  = np.randint(scale*block_width, scale*city_width)
 
-        ### Generate random north, east position
-        pn = D*np.random.rand(1)
-        pe = D*np.random.rand(1)
+    ## Generate random north, east position
+    pn = D*np.random.rand(1)
+    pe = D*np.random.rand(1)
 
-        ### Create position
-        pose = np.array([[pn], [pe], [pd]])
+    ## Create position
+    pose = np.array([[pn], [pe], [pd]])
 
     return pose
 
