@@ -97,7 +97,7 @@ def find_shortest_path(tree: MsgWaypoints, end_pose: NP_MAT) -> MsgWaypoints:
             cost += wp[0].cost
                                        
         ## Update candidates
-        candidate_paths.append(wp)
+        candidate_paths.append(wp.copy())
         candidate_costs.append(cost)
                                        
     # Find shortest path
