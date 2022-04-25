@@ -48,10 +48,18 @@ def model(t,x):
     theta = 0.2
 
     # Calculate control
-    b0 = 0.1
-    s  = a*x1 + x2
-    v  = sgn(s)*(-theta*x1*x2 - b0)
-    u  = -a*(x2+np.sin(x1)) + v
+    ## Nominal controller
+    k           = 5
+    nom_control = x1*np.sin(x1) + theta*x1*x2 - k*x1 - k*x2
+
+    ## Disturbance controller
+    k0          = 0
+    rho         = theta*x1*x2
+    b0          = 0.5
+    dis_control = (rho/(1-k0) + b0) * x2/np.linalg.norm(x2)
+
+    ## Complete controller
+    u           = nom_control - dis_control
 
     # Calculate ODEs
     xd1 = x2 + np.sin(x1)
@@ -73,14 +81,14 @@ control = np.array([])
 
 ## Time horizon
 t0 = 0.0
-tf = 100.0
+tf = 20.0
 t = [t0, tf]
 
 ## Initial conditions
-x0 = [0.2, 0.1]
+x0 = [-3,2]
 
 # Solve ode model
 sol = solve_ivp(model, t, x0, method='RK45', dense_output=True)
 
 # Plot solution
-plot(sol, title="8", control=control, legend=['x1', 'x2'])
+plot(sol, title="9", control=control, legend=['x1', 'x2'])
