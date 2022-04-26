@@ -29,15 +29,20 @@ def smooth_path(waypoints: MsgWaypoints, world_map: MsgWorldMap) -> MsgWaypoints
     """
 
     # Local variables
-    i           = 0                                     # Start at root node
-    j           = 1                                     # Start at next node in path
-    smooth_path = MsgWaypoints()                        # Smoothed path
-    smooth_path.add_waypoint(waypoints.get_waypoint(i)) # Add root waypoint to smooth path
+    i                = 0                                # Start at root node
+    j                = 1                                # Start at next node in path
+    cost             = 0                                # Cost of smoothed path
+    smooth_path      = MsgWaypoints()                   # Smoothed path
+    smooth_path.type = waypoints.type                   # Update smooth path type
+
+    # Add root waypoint to smooth path
+    smooth_path.add_waypoint(waypoints.get_waypoint(i))
 
     # While we have not reached the objective
-    for j in range(waypoints.num_waypoints):
+    for k in range(waypoints.num_waypoints):
         ## Check if we are going out of bound
-        if j+1 == waypoints.num_waypoints:
+        if j+1 >= waypoints.num_waypoints or \
+           i   >= smooth_path.num_waypoints:
             break
 
         ## Update waypoints
@@ -46,18 +51,24 @@ def smooth_path(waypoints: MsgWaypoints, world_map: MsgWorldMap) -> MsgWaypoints
 
         ## If waypoint j+1 collides with an object, use the previous node
         if not exist_feasible_path(ws.ned, wp.ned, world_map):
+            ### Get new waypoint
+            w = waypoints.get_waypoint(j)
+            ### Update cost
+            w.cost = distance(ws.ned,w.ned)
             ### Add node j to path
-            smooth_path.add_waypoint(waypoints.get_waypoint(j))
+            smooth_path.add_waypoint(w)
             ### Make node j the new starting waypoint
-            i = j
-            
+            i += 1
+
         ## Increment j to the next waypoint
         j += 1
 
     # Add last node to waypoint
-    smooth_path.add_waypoint(waypoints.get_ned(waypoints.num_waypoints-1))
+    w      = waypoints.get_waypoint(waypoints.num_waypoints-1)
+    w.cost = distance(ws.ned,w.ned)
+    smooth_path.add_waypoint(w)
 
-    return smooth_waypoints
+    return smooth_path
 
 ##==============================================================================
 ##
@@ -76,52 +87,51 @@ def find_shortest_path(tree: MsgWaypoints, end_pose: NP_MAT) -> MsgWaypoints:
         shortest_path: The shortest path
     """
     # Local variables
-    candiate_end_nodes = [] # All the waypoints that are connected to the goal
-    candidate_paths    = [] # All the paths from root to the goal
-    candidate_costs    = [] # Cost to use path
+    candidate_end_nodes = [] # All the waypoints that are connected to the goal
+    candidate_paths     = [] # All the paths from root to the goal
+    candidate_costs     = [] # Cost to use path
 
     # Find all the nodes connected to the goal
     for i in range(tree.num_waypoints):
         if tree.get_waypoint(i).connect_to_goal == True:
-            candidate_end_nodes.append(tree.get_waypoint(i)
+            candidate_end_nodes.append(tree.get_waypoint(i))
 
     # For each candidate, calculate the cost of the path
     for i in range(len(candidate_end_nodes)):
         cost = 0               # Initialize cost
         wp   = []              # Array of waypoints
-                                       
+
         ## Initialize wp with end node
         wp.append(candidate_end_nodes[i])
         cost += wp[0].cost
 
         ## Loop backwards until the root node is found
-        while True:
-            ### If we are at the beginning break
-            if wp[0].parent == False:
-                break
-                                       
+        while wp[0].parent != False:
             ### Insert the parent node
             parent_node = tree.get_waypoint(int(wp[0].parent))
             wp.insert(0,parent_node)
-                                       
+
             ### Add cost of waypoint
             cost += wp[0].cost
-                                       
+
         ## Update candidates
         candidate_paths.append(wp.copy())
         candidate_costs.append(cost)
-                                       
+
     # Find shortest path
-    idx = index(min(candidate_costs))
+    idx = np.argmin(candidate_costs)
 
     # Create shortest path
     shortest_path = MsgWaypoints()
-              
+
     ## Loop through each waypoint and add it to MsgWaypoints
     for w in (candidate_paths[idx]): shortest_path.add_waypoint(w)
-        
+
+    ## Configure the path
+    shortest_path.type = tree.type
+
     ## Add final node (may not be necessary?)
-    shortest_path.add(end_pose, airspeed=waypoints[0].airspeed, parent=i)
+    shortest_path.add(end_pose, airspeed=shortest_path.get_waypoint(0).airspeed, parent=2)
 
     return shortest_path
 
@@ -264,28 +274,21 @@ def exist_feasible_path(start_pose: NP_MAT, end_pose: NP_MAT, world_map: MsgWorl
             return False
 
         ## Get next point
-        pn = points[i].item(0)
-        pe = points[i].item(1)
-        pd = points[i].item(2)
+        pn = points[0][i]
+        pe = points[1][i]
+        pd = points[2][i]
 
         ## Loop through each building
         for j in range(len(world_map.building_east)):
             ### Building dimensions
-            b_pe   = world_map.building_east.item(j)  + world_map.city_width/2
-            b_ne   = world_map.building_east.item(j)  - world_map.city_width/2
-            b_pn   = world_map.building_north.item(j) + world_map.city_width/2
-            b_nn   = world_map.building_north.item(j) - world_map.city_width/2
+            b_pe   = world_map.building_east.item(j)  + world_map.building_width/2
+            b_ne   = world_map.building_east.item(j)  - world_map.building_width/2
+            b_pn   = world_map.building_north.item(j) + world_map.building_width/2
+            b_nn   = world_map.building_north.item(j) - world_map.building_width/2
 
             ### Check for collision
-            if (pn >= b_nn or pn <= b_pn) and \
-               (pe >= b_ne or pe <= b_pe):
-                # print(b_pe)
-                # print(b_ne)
-                # print(b_pn)
-                # print(b_nn)
-                # print(pn)
-                # print(pe)
-                # input(pd)
+            if (pn >= b_nn and pn <= b_pn) and \
+               (pe >= b_ne and pe <= b_pe):
                 valid_pose = False
                 break
 
@@ -325,12 +328,12 @@ def height_above_ground(world_map: MsgWorldMap, point: NP_MAT) -> float:
     tmp          = np.abs(point.item(1)-world_map.building_east)
     d_e          = np.min(tmp)
     idx_e        = np.argmin(tmp)
-                                       
+
     if (d_n<world_map.building_width) and (d_e<world_map.building_width):
         map_height = world_map.building_height[idx_n, idx_e]
     else:
         map_height = 0
-                                       
+
     h_agl = point_height - map_height
     return float(h_agl)
 
@@ -352,11 +355,11 @@ def points_along_path(start_pose: NP_MAT, end_pose: NP_MAT, N: int) -> NP_MAT:
     L         = np.linalg.norm(q)
     q         = q / L
     w         = start_pose
-                                       
+
     for _ in range(1, N):
         w = w + (L / N) * q
         points = np.append(points, w, axis=1)
-                                       
+
     return points
 
 ##==============================================================================
