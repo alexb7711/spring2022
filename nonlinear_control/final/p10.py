@@ -37,39 +37,27 @@ def model(t,x):
     # Global variables
     global control
 
-    # Extract states
-    x1, x2 = x
-
     # Truth values
-    theta_t = 0.1
-    a       = 1
-
-    # Estimate values
-    theta = 0.1
+    a = 1
 
     # Calculate control
-    ## Nominal controller
-    k           = 5
-    nom_control = x1*np.sin(x1) + theta*x1*x2 - k*x1 - k*x2
-
-    ## Disturbance controller
-    k0          = 0
-    rho         = theta*x1*x2
-    b0          = 0.5
-    dis_control = (rho/(1-k0) + b0) * x2/np.linalg.norm(x2)
-
-    ## Complete controller
-    u           = nom_control - dis_control
+    k     = 1
+    b     = 1
+    gamma = 1
+    r     = np.sin(t)
+    rdot  = np.cos(t)
+    e     = x - r
+    ahat  = gamma*e*x
+    u     = -1/b*(k*e - rdot + ahat*x)
 
     # Calculate ODEs
-    xd1 = x2 + np.sin(x1)
-    xd2 = theta_t*x1*x2 + u
+    xd = a*x + u
 
     # Append control applied
     control = np.append(control,[u])
 
     # Bundle ODEs
-    dx = [xd1, xd2]
+    dx = xd
 
     return dx
 
@@ -81,7 +69,7 @@ control = np.array([])
 
 ## Time horizon
 t0 = 0.0
-tf = 20.0
+tf = 5.0
 t = [t0, tf]
 
 ## Initial conditions
@@ -91,4 +79,4 @@ x0 = [-3,2]
 sol = solve_ivp(model, t, x0, method='RK45', dense_output=True)
 
 # Plot solution
-plot(sol, title="9", control=control, legend=['x1', 'x2'])
+plot(sol, title="10", control=control, legend=['x1'])

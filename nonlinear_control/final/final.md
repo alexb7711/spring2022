@@ -168,6 +168,68 @@ $$
 Investigate (by whatever means) stability of the origin for the following system. Make the strongtest statement possible.
 
 ## Solution
+### Attempt 1
+Let $V(x) = 1/4x_1^4 + 1/2x_2^2$, therefore
+
+$$
+\begin{array}{l}
+    \dot{V}(x) = x_1^3 \dot{x}_1 + x_2\dot{x}_2 = \\
+    x_1^6 - x_1^3x_2 + x_1x_2 - x_2^2 \\
+\end{array}
+$$
+
+From this, nothing can be said.
+
+### Attempt 2
+Let $V(x) = 1/2x_1^2 + 1/2x_2^2$, therefore
+
+$$
+\begin{array}{l}
+    \dot{V}(x) = x_1\dot{x}_1 + x_2\dot{x}_2 = x_1^4 - x_2^2
+\end{array}
+$$
+
+From this, nothing can be said.
+
+### Attempt 3
+Let $V(x) = 1/2x_2^2$ , therefore
+
+$$
+\begin{array}{l}
+    \dot{V}(x) = x_2\dot{x}_2 = (x_1 - x_2)x_2 = x_1x_2 = x_2^2
+\end{array}
+$$
+
+From this, nothing can be said.
+
+
+### Attempt 4
+Can't attempt LaSelle's Invariance Principle because we cannot get a negative semi-definite $\dot{V}(x)$.
+
+### Attempt 5
+Lets just try linearizing and see what happens locally (See appendix for worksheet). Solving for equilibrium points gives
+
+$$
+x_{eq} = \{(0,0), (1,1), (-1,-1)\}
+$$
+
+The Jacobian of the system is:
+
+$$
+J =
+\begin{bmatrix}
+    3x_1^2 & -1 \\
+    1      & -1
+\end{bmatrix}
+$$
+
+Where the given eigenvalues are
+
+* $(0,0)$: $[-0.5*1.732\pm i]$ - Stable focus
+* $(1,1)$: $[-0.7325, 2.73]$ - Saddle
+* $(-1,-1)$: $[-0.7325, 2.73]$ - Saddle
+
+![](img/3.png)
 \pagebreak
 
 # 4
@@ -528,6 +590,47 @@ True values: $\theta = 0.1$ and $a=1$
 * Simulate
 
 ## Solution
+### Stabilize the nominal system
+Begin by writing
+
+$$
+\begin{bmatrix}
+    x_1 + sin(x1) \\
+    \theta_0 x_1 x_2
+\end{bmatrix} +
+\begin{bmatrix}
+    0 \\ 1
+\end{bmatrix} u
+$$
+
+Let $V(x) = 1/2x^Tx$, therefore
+
+$$
+\begin{array}{l}
+    \dot{V}(x) = x_1 \dot{x}_1 + x_2 \dot{x}_2 = \\
+    x_1(x_2sin(x1)) + x2(\theta_0 x_1 x_2 + u) = \\
+    x_1x_2sin(x_1) + \theta_0 x_1x_2^2 + x_2 u
+\end{array}
+$$
+
+We choose $u = x_1sin(x_1) + \theta_0 x_1x_2 - kx$, therefore $\dot{V}(x) = -kx$. However, because we want to control a nominal and uncertain system, let the $u$ defined above be redefined as $\psi = x_1sin(x_1) + \theta_0 x_1x_2 - kx$. We now let $u = \psi + v$.
+
+### Stabilize the actual system
+We begin by defining $\delta(t,x,u) = \bar{\theta} x_1x_2$
+
+$$
+\bar{\theta}x_1x_2 \leq |\bar{\theta}x_1x_2| \leq \rho (x) + k_0 v
+$$
+
+Where $k_0 = 0$ because there is no uncertainty in the control. Now we define $\eta = \nabla V(x)G(x) = x^T\begin{bmatrix}0\\1\end{bmatrix} = x2$. We then choose $v$ to be
+
+$$
+v = -(\frac{\rho}{1-k_0} + \beta_0)\frac{x_1}{|x_2|} \\
+$$
+
+Where the total control is $u = \psi + v$.
+
+![](img/9.png
 \pagebreak
 
 # 10
@@ -546,3 +649,32 @@ $$
 * Simulate
 
 ## Solution
+Define the error as
+
+$$
+\begin{array}{l}
+    e(t) = x(t) - r(t) \\
+    \dot{e} = (\hat{a} - a)x + be - \dot{r}
+\end{array}
+$$
+
+Where $r(t)$ is a reference trajectory. Choose $u = -1[ke + \hat{a}x - \dot{r}]$ such that
+
+$$
+\dot{e} = -ke
+$$
+
+where $\hat{a}$ is "adaptive" value of $a$. Choose $V = \frac{1}{2} e^2 + \frac{1}{2\gamma} \tilde{a}^2$, therefore
+
+$$
+\begin{array}{l}
+    \dot{V} = e\dot{e} + \frac{1}{\gamma}\tilde{a}\dot{\hat{a}}
+\end{array}
+$$
+
+Choose $\dot{\hat{a}} = \gamma e x$, thus $\dot{V}(x) = -ke^2 < 0$. Therefore, $u = -1(ke - \dot{r} + \hat{a(t)}x)$
+
+![](img/10.png)
+\pagebreak
+
+# Appendix

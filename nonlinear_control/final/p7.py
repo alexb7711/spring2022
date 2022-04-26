@@ -64,7 +64,7 @@ control = np.array([])
 
 ## Time horizon
 t0 = 0.0
-tf = 100.0
+tf = 10.0
 t = [t0, tf]
 
 ## Initial conditions
