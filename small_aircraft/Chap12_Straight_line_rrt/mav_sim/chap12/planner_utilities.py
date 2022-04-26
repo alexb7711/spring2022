@@ -63,9 +63,11 @@ def smooth_path(waypoints: MsgWaypoints, world_map: MsgWorldMap) -> MsgWaypoints
         ## Increment j to the next waypoint
         j += 1
 
-    # Add last node to waypoint
+    # Update last waypoint information
     w      = waypoints.get_waypoint(waypoints.num_waypoints-1)
     w.cost = distance(ws.ned,w.ned)
+
+    # Add last node to waypoint
     smooth_path.add_waypoint(w)
 
     return smooth_path
@@ -124,14 +126,23 @@ def find_shortest_path(tree: MsgWaypoints, end_pose: NP_MAT) -> MsgWaypoints:
     # Create shortest path
     shortest_path = MsgWaypoints()
 
-    ## Loop through each waypoint and add it to MsgWaypoints
-    for w in (candidate_paths[idx]): shortest_path.add_waypoint(w)
+    ## Add first node
+    shortest_path.add_waypoint(tree.get_waypoint(0))
+
+    ## Loop through each waypoint
+    for w in (candidate_paths[idx]):
+        ### Update waypoint information
+        w.cost            = 0
+        w.parent          = 0
+        w.connect_to_goal = 0
+        ### Add waypoint to shortest path
+        shortest_path.add_waypoint(w)
 
     ## Configure the path
     shortest_path.type = tree.type
 
-    ## Add final node (may not be necessary?)
-    shortest_path.add(end_pose, airspeed=shortest_path.get_waypoint(0).airspeed, parent=2)
+    ## Add final node
+    shortest_path.add(end_pose, airspeed=shortest_path.get_waypoint(0).airspeed, parent=0)
 
     return shortest_path
 
