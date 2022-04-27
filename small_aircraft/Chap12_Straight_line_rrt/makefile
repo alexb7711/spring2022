@@ -27,7 +27,7 @@ clean:              ## Remove the project and its dependencies from your python 
 	$(BIN)/pip cache purge
 
 run:
-	$(BIN)/python ./book_assignments/mavsim_chap11.py
+	$(BIN)/python ./book_assignments/mavsim_chap12.py
 
 test:
 	$(BIN)/python ./mav_sim/unit_tests/ch12_straight_line_rrt_test.py

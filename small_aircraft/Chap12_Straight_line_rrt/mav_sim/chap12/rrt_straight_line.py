@@ -111,20 +111,49 @@ def create_rrt_plan(start_pose: NP_MAT, end_pose: NP_MAT, Va: float, \
     Returns:
         waypoints: Waypoints defining the planned path
     """
+    # Local variables
+    connected_to_goal = False
+    counter           = 0
+    go_for_goal       = False
+
     # Initialize the tree (Algorithm 12 line 1)
-    tree = MsgWaypoints()
+    tree      = MsgWaypoints()
     tree.type = 'fillet' # Could also be: tree.type = 'straight_line'
     tree.add(ned=start_pose, airspeed=Va) # add the start pose to the tree
 
-    # Stand in waypoints: Delete lines below:
-    # Waypoint definition
-    waypoints = MsgWaypoints()
-    waypoints.type = 'fillet'
-    Va = 25
-    waypoints.add(np.array([[0, 0, -100]]).T, Va, np.radians(0), np.inf, 0, 0)
-    waypoints.add(np.array([[1000, 0, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
-    waypoints.add(np.array([[0, 1000, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
-    waypoints.add(np.array([[1000, 1000, -100]]).T, Va, np.radians(-135), np.inf, 0, 0)
+    # While tree is not connected to the goal
+    while not connected_to_goal and tree.num_waypoints < num_paths:
+        # If counter is less than 100, generate random configuration and explore
+        if counter < 100:
+            # Generate configuration
+            p = generate_random_configuration(world_map, start_pose.item(2))
+            # Update counter
+            counter += 1
+            # Set that configuration is not going for goal
+            go_for_goal = False
+        # Otherwise, go for goal
+        else:
+            # Set the configuration as the end node
+            p           = end_pose
+
+            # State that we are going for goal
+            go_for_goal = True
+
+        # Find closest node
+        v_closest, idx, dist = find_closest_configuration(tree,p)
+
+        # Create a path in accordance with the max line length
+        v_actual, cost       = plan_path(v_closest, p, max_edge_length=segment_length, dist=dist)
+
+        # If the generated configuration is feasible
+        if exist_feasible_path(v_closest, v_actual, world_map):
+            ## If we are going for goal, state that the parent node is connected
+            ## to goal
+            if go_for_goal: v_closest.connected_to_goal = True
+            ## Add the point to the tree
+            tree.add(ned=v_actual, airspeed=Va, cost=cost, parent=idx, connect_to_goal=False)
+
+    waypoints = find_shortest_path(tree, end_pose)
 
     return waypoints
 

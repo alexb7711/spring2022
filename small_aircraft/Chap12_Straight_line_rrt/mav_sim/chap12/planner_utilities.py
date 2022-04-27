@@ -166,7 +166,7 @@ def generate_random_configuration(world_map: MsgWorldMap, pd: float) -> NP_MAT:
               of map.
     """
     # Local variables
-    pose        = np.array()
+    pose        = np.array([])
     city_width  = world_map.city_width;
     block_width = city_width/world_map.num_city_blocks
     scale       = 1
