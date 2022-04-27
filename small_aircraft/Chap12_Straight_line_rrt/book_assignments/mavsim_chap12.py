@@ -22,8 +22,8 @@ def main() -> None:
 
     # Final point definition
     world_map = MsgWorldMap()
-    end_pose = np.array([[world_map.city_width], [world_map.city_width],
-                                     [-100]])
+    end_pose = np.array([[world_map.city_width], [world_map.city_width],[-100]])
+    #end_pose = np.array([[world_map.city_width], [0],[-100]])
 
     # Run the simulation - Note that while not used, the viewer objects
     # need to remain active to keep the windows open

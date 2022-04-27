@@ -112,9 +112,9 @@ def create_rrt_plan(start_pose: NP_MAT, end_pose: NP_MAT, Va: float, \
         waypoints: Waypoints defining the planned path
     """
     # Local variables
-    connected_to_goal = False
-    counter           = 0
-    go_for_goal       = False
+    counter     = False
+    go_for_goal = 0
+    paths_found = 0
 
     # Initialize the tree (Algorithm 12 line 1)
     tree      = MsgWaypoints()
@@ -122,7 +122,7 @@ def create_rrt_plan(start_pose: NP_MAT, end_pose: NP_MAT, Va: float, \
     tree.add(ned=start_pose, airspeed=Va) # add the start pose to the tree
 
     # While tree is not connected to the goal
-    while not connected_to_goal and tree.num_waypoints < num_paths:
+    while paths_found < num_paths:
         # If counter is less than 100, generate random configuration and explore
         if counter < 100:
             # Generate configuration
@@ -135,7 +135,6 @@ def create_rrt_plan(start_pose: NP_MAT, end_pose: NP_MAT, Va: float, \
         else:
             # Set the configuration as the end node
             p           = end_pose
-
             # State that we are going for goal
             go_for_goal = True
 
@@ -149,10 +148,13 @@ def create_rrt_plan(start_pose: NP_MAT, end_pose: NP_MAT, Va: float, \
         if exist_feasible_path(v_closest, v_actual, world_map):
             ## If we are going for goal, state that the parent node is connected
             ## to goal
-            if go_for_goal: v_closest.connected_to_goal = True
+            if go_for_goal:
+                paths_found                           += 1
+                tree.connect_to_goal[idx] = True
             ## Add the point to the tree
             tree.add(ned=v_actual, airspeed=Va, cost=cost, parent=idx, connect_to_goal=False)
 
+    # Find shortest path from generated points
     waypoints = find_shortest_path(tree, end_pose)
 
     return waypoints

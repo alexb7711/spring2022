@@ -12,6 +12,7 @@ mavsim_python
 from typing import Optional, cast
 
 import numpy as np
+from math import isclose
 from mav_sim.message_types.msg_waypoints import MsgWaypoints
 from mav_sim.message_types.msg_world_map import MsgWorldMap
 from mav_sim.tools.types import NP_MAT
@@ -39,7 +40,7 @@ def smooth_path(waypoints: MsgWaypoints, world_map: MsgWorldMap) -> MsgWaypoints
     smooth_path.add_waypoint(waypoints.get_waypoint(i))
 
     # While we have not reached the objective
-    for k in range(waypoints.num_waypoints):
+    for _ in range(waypoints.num_waypoints):
         ## Check if we are going out of bound
         if j+1 >= waypoints.num_waypoints or \
            i   >= smooth_path.num_waypoints:
@@ -169,15 +170,15 @@ def generate_random_configuration(world_map: MsgWorldMap, pd: float) -> NP_MAT:
     pose        = np.array([])
     city_width  = world_map.city_width;
     block_width = city_width/world_map.num_city_blocks
-    scale       = 1
+    rand        = np.random.rand(2)
 
     # generate a random pose
-    ## Generate random step
-    D  = np.randint(scale*block_width, scale*city_width)
+    #while np.any(rand < 1e-5):
+    #    rand = np.random.rand(2)
 
     ## Generate random north, east position
-    pn = D*np.random.rand(1)
-    pe = D*np.random.rand(1)
+    pn = city_width*rand[0]
+    pe = city_width*rand[1]
 
     ## Create position
     pose = np.array([[pn], [pe], [pd]])
@@ -185,7 +186,7 @@ def generate_random_configuration(world_map: MsgWorldMap, pd: float) -> NP_MAT:
     return pose
 
 ##==============================================================================
-## PASS
+##
 def find_closest_configuration(tree: MsgWaypoints, pos_in: NP_MAT) -> tuple[NP_MAT, int, float]:
     """ Returns the closest waypoint in tree to the passed in 3x1 position
 
@@ -217,7 +218,7 @@ def find_closest_configuration(tree: MsgWaypoints, pos_in: NP_MAT) -> tuple[NP_M
     return (pos_closest, idx, dist)
 
 ##==============================================================================
-## PASS
+##
 def plan_path(start_point: NP_MAT, desired_point: NP_MAT, max_edge_length: float, \
     dist: Optional[float] = None) -> tuple[NP_MAT, float]:
     """ Returns a point along the line formed between the two input points that is
@@ -274,6 +275,7 @@ def exist_feasible_path(start_pose: NP_MAT, end_pose: NP_MAT, world_map: MsgWorl
     Returns:
         True => path is feasible, False => path collides with obstacle
     """
+    # If the start and end pose are the same
     # Local variables
     valid_pose = True
     points     = points_along_path(start_pose, end_pose, 100)
@@ -363,7 +365,7 @@ def points_along_path(start_pose: NP_MAT, end_pose: NP_MAT, N: int) -> NP_MAT:
     """
     points    = start_pose
     q: NP_MAT = (end_pose - start_pose)
-    L         = np.linalg.norm(q)
+    L         = np.linalg.norm(q) if np.linalg.norm(q) >= 1e-5 else 1e-3
     q         = q / L
     w         = start_pose
 
